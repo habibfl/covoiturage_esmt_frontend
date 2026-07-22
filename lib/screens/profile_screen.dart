@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/colors.dart';
 import '../main.dart';
 import '../services/auth_service.dart';
+import '../services/reservation_service.dart';
 import '../services/vehicle_service.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -27,6 +28,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _role = 'passenger';
   String _photoUrl = '';
   bool _hasVehicle = false;
+  int _pendingRequests = 0;
   Uint8List? _pickedPhotoBytes;
   bool _uploadingPhoto = false;
 
@@ -53,6 +55,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _photoUrl = photoUrl;
       _hasVehicle = hasVehicle;
     });
+
+    if (hasVehicle) {
+      final count = await ReservationService.countPendingForDriver();
+      if (!mounted) return;
+      setState(() => _pendingRequests = count);
+    }
   }
 
   Future<void> _toggleTheme(bool value) async {
@@ -252,6 +260,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 _SectionLabel('Activite'),
                 _SettingsGroup(
                   rows: [
+                    if (isDriver)
+                      _SettingsRow(
+                        icon: CupertinoIcons.tray_full,
+                        color: AppColors.primary,
+                        label: 'Demandes de reservation',
+                        onTap: () => context.go('/trip-requests'),
+                        trailing: _pendingRequests > 0
+                            ? _CountBadge(count: _pendingRequests)
+                            : null,
+                      ),
                     _SettingsRow(
                       icon: CupertinoIcons.clock,
                       color: AppColors.statusOrange,
@@ -300,6 +318,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _CountBadge extends StatelessWidget {
+  final int count;
+
+  const _CountBadge({required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppColors.statusRed,
+        borderRadius: BorderRadius.circular(100),
+      ),
+      child: Text(
+        '$count',
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: Colors.white,
+        ),
       ),
     );
   }
@@ -540,12 +583,15 @@ class _SettingsRow extends StatelessWidget {
             Expanded(
               child: Text(label, style: Theme.of(context).textTheme.bodyMedium),
             ),
-            trailing ??
-                Icon(
-                  CupertinoIcons.chevron_right,
-                  size: 16,
-                  color: AppColors.textSecondary,
-                ),
+            if (trailing != null) ...[
+              trailing!,
+              const SizedBox(width: 8),
+            ],
+            Icon(
+              CupertinoIcons.chevron_right,
+              size: 16,
+              color: AppColors.textSecondary,
+            ),
           ],
         ),
       ),

@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import '../constants/api_constants.dart';
 import 'auth_service.dart';
 import 'error_utils.dart';
+import 'trip_service.dart';
 
 class ReservationResult {
   final bool success;
@@ -156,5 +157,151 @@ class ReservationService {
     } catch (_) {
       return null;
     }
+  }
+
+  static Future<List<Map<String, dynamic>>> getReservationsForTrip(
+    String trajetId,
+  ) async {
+    final token = await AuthService.getToken();
+    if (token == null || token.isEmpty) return [];
+    try {
+      final uri = Uri.parse(
+        '${ApiConstants.baseUrl}/reservations/trajet/$trajetId',
+      );
+      final response = await http.get(
+        uri,
+        headers: {'Authorization': 'Bearer $token'},
+      ).timeout(const Duration(seconds: 12));
+      if (response.statusCode != 200) {
+        logNetworkError('ReservationService.getReservationsForTrip', response);
+        return [];
+      }
+      final decoded = jsonDecode(response.body);
+      if (decoded is! List) return [];
+      return decoded.whereType<Map<String, dynamic>>().toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  static Future<ReservationResult> confirmReservation(
+    String reservationId,
+  ) async {
+    final token = await AuthService.getToken();
+    if (token == null || token.isEmpty) {
+      return const ReservationResult(
+        success: false,
+        message: 'Vous devez etre connecte.',
+      );
+    }
+    try {
+      final uri = Uri.parse(
+        '${ApiConstants.baseUrl}/reservations/$reservationId/confirm',
+      );
+      final response = await http.put(
+        uri,
+        headers: {'Authorization': 'Bearer $token'},
+      ).timeout(const Duration(seconds: 12));
+
+      if (response.statusCode == 200) {
+        return const ReservationResult(success: true);
+      }
+
+      logNetworkError('ReservationService.confirmReservation', response);
+      return ReservationResult(
+        success: false,
+        message: extractErrorMessage(response),
+        isAuthError: response.statusCode == 401,
+      );
+    } on SocketException {
+      return const ReservationResult(
+        success: false,
+        message: 'Impossible de contacter le serveur. Verifiez votre connexion.',
+      );
+    } on TimeoutException {
+      return const ReservationResult(
+        success: false,
+        message: 'Le serveur met trop de temps a repondre. Reessayez.',
+      );
+    } catch (e) {
+      return ReservationResult(success: false, message: 'Erreur: $e');
+    }
+  }
+
+  static Future<ReservationResult> rejectReservation(
+    String reservationId,
+  ) async {
+    final token = await AuthService.getToken();
+    if (token == null || token.isEmpty) {
+      return const ReservationResult(
+        success: false,
+        message: 'Vous devez etre connecte.',
+      );
+    }
+    try {
+      final uri = Uri.parse(
+        '${ApiConstants.baseUrl}/reservations/$reservationId/reject',
+      );
+      final response = await http.put(
+        uri,
+        headers: {'Authorization': 'Bearer $token'},
+      ).timeout(const Duration(seconds: 12));
+
+      if (response.statusCode == 200) {
+        return const ReservationResult(success: true);
+      }
+
+      logNetworkError('ReservationService.rejectReservation', response);
+      return ReservationResult(
+        success: false,
+        message: extractErrorMessage(response),
+        isAuthError: response.statusCode == 401,
+      );
+    } on SocketException {
+      return const ReservationResult(
+        success: false,
+        message: 'Impossible de contacter le serveur. Verifiez votre connexion.',
+      );
+    } on TimeoutException {
+      return const ReservationResult(
+        success: false,
+        message: 'Le serveur met trop de temps a repondre. Reessayez.',
+      );
+    } catch (e) {
+      return ReservationResult(success: false, message: 'Erreur: $e');
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> getPendingRequests() async {
+    final userId = await AuthService.getUserId();
+    if (userId == null) return [];
+
+    final trips = await TripService.getTrajetsByConducteur(userId);
+    final requests = <Map<String, dynamic>>[];
+
+    for (final trip in trips) {
+      final tripId = trip['id']?.toString();
+      if (tripId == null) continue;
+      final reservations = await getReservationsForTrip(tripId);
+      for (final res in reservations) {
+        if (res['statutReservation'] == 'EN_ATTENTE') {
+          requests.add({
+            'reservationId': res['id']?.toString(),
+            'passagerNom': res['passagerNom'] ?? res['passagerName'],
+            'nbPlacesReservees': res['nbPlacesReservees'],
+            'tripId': tripId,
+            'departure': trip['departure'],
+            'arrival': trip['arrival'],
+            'time': trip['time'],
+          });
+        }
+      }
+    }
+    return requests;
+  }
+
+  static Future<int> countPendingForDriver() async {
+    final requests = await getPendingRequests();
+    return requests.length;
   }
 }

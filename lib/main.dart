@@ -16,6 +16,7 @@ import 'screens/register_screen.dart';
 import 'screens/search_screen.dart';
 import 'screens/tracking_screen.dart';
 import 'screens/trip_history_screen.dart';
+import 'screens/trip_requests_screen.dart';
 import 'screens/two_factor_screen.dart';
 
 final ValueNotifier<ThemeMode> themeModeNotifier = ValueNotifier(
@@ -67,22 +68,22 @@ class CovoiturageESMTApp extends StatelessWidget {
         },
       ),
       GoRoute(
-  path: '/tracking',
-  pageBuilder: (context, state) {
-    String? tripId;
-    String? reservationId;
-    final extra = state.extra;
-    if (extra is Map) {
-      tripId = extra['tripId']?.toString();
-      reservationId = extra['reservationId']?.toString();
-    } else if (extra is String) {
-      tripId = extra;
-    }
-    return _iosPage(
-      TrackingScreen(tripId: tripId, reservationId: reservationId),
-    );
-  },
-),
+        path: '/tracking',
+        pageBuilder: (context, state) {
+          String? tripId;
+          String? reservationId;
+          final extra = state.extra;
+          if (extra is Map) {
+            tripId = extra['tripId']?.toString();
+            reservationId = extra['reservationId']?.toString();
+          } else if (extra is String) {
+            tripId = extra;
+          }
+          return _iosPage(
+            TrackingScreen(tripId: tripId, reservationId: reservationId),
+          );
+        },
+      ),
       GoRoute(
         path: '/profile',
         pageBuilder: (context, state) => _iosPage(const ProfileScreen()),
@@ -109,6 +110,10 @@ class CovoiturageESMTApp extends StatelessWidget {
       GoRoute(
         path: '/trip-history',
         pageBuilder: (context, state) => _iosPage(const TripHistoryScreen()),
+      ),
+      GoRoute(
+        path: '/trip-requests',
+        pageBuilder: (context, state) => _iosPage(const TripRequestsScreen()),
       ),
     ],
   );

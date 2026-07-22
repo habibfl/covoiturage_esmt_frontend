@@ -75,6 +75,36 @@ class TripService {
     }
   }
 
+  static Future<List<Map<String, dynamic>>> getTrajetsByConducteur(
+    int conducteurId,
+  ) async {
+    try {
+      final uri =
+          Uri.parse('${ApiConstants.baseUrl}/trajets/conducteur/$conducteurId');
+      final response = await http
+          .get(uri, headers: await _authHeaders())
+          .timeout(const Duration(seconds: 12));
+      if (response.statusCode != 200) {
+        logNetworkError('TripService.getTrajetsByConducteur', response);
+        return [];
+      }
+      final decoded = jsonDecode(response.body);
+      if (decoded is! List) return [];
+      return decoded.whereType<Map<String, dynamic>>().map((json) {
+        return {
+          'id': json['id'],
+          'departure': json['pointDepart'],
+          'arrival': json['pointArrivee'],
+          'time': json['heureDepart'],
+          'seats': json['nbPlacesDisponibles'],
+          'statut': json['statutTrajet'],
+        };
+      }).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
   static Future<Map<String, dynamic>> _mapTrajet(
     Map<String, dynamic> json,
   ) async {
