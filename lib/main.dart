@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -5,11 +6,13 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'constants/colors.dart';
+import 'firebase_options.dart';
 import 'screens/add_vehicle_screen.dart';
 import 'screens/booking_screen.dart';
 import 'screens/forgot_password_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/my_trips_screen.dart';
 import 'screens/personal_info_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/publish_trip_screen.dart';
@@ -27,6 +30,9 @@ final ValueNotifier<ThemeMode> themeModeNotifier = ValueNotifier(
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   final prefs = await SharedPreferences.getInstance();
   final isDark = prefs.getBool('darkMode') ?? false;
   AppColors.setDark(isDark);
@@ -125,6 +131,10 @@ class CovoiturageESMTApp extends StatelessWidget {
       GoRoute(
         path: '/trip-requests',
         pageBuilder: (context, state) => _iosPage(const TripRequestsScreen()),
+      ),
+      GoRoute(
+        path: '/my-trips',
+        pageBuilder: (context, state) => _iosPage(const MyTripsScreen()),
       ),
     ],
   );

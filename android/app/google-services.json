@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "345697199213",
+    "firebase_url": "https://covoiturage-esmt-default-rtdb.firebaseio.com",
+    "project_id": "covoiturage-esmt",
+    "storage_bucket": "covoiturage-esmt.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:345697199213:android:782905c4d69770245bcb64",
+        "android_client_info": {
+          "package_name": "com.example.covoiturage_esmt"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDY8bQ45dcqUsH-aVCx7ABCzL-Q2fBLVnw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

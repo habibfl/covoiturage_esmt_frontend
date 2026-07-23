@@ -105,6 +105,46 @@ class TripService {
     }
   }
 
+  /// ATTENTION : route non confirmee par le backend, voir avertissement.
+  static Future<TripPublishResult> updateTripStatus(
+    String tripId,
+    String statutTrajet,
+  ) async {
+    final token = await AuthService.getToken();
+    if (token == null || token.isEmpty) {
+      return const TripPublishResult(
+        success: false,
+        message: 'Vous devez etre connecte.',
+      );
+    }
+    try {
+      final uri = Uri.parse('${ApiConstants.baseUrl}/trajets/$tripId');
+      final response = await http
+          .put(
+            uri,
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+            body: jsonEncode({'statutTrajet': statutTrajet}),
+          )
+          .timeout(const Duration(seconds: 12));
+
+      if (response.statusCode == 200) {
+        return const TripPublishResult(success: true);
+      }
+
+      logNetworkError('TripService.updateTripStatus', response);
+      return TripPublishResult(
+        success: false,
+        message: extractErrorMessage(response),
+        isAuthError: response.statusCode == 401,
+      );
+    } catch (e) {
+      return TripPublishResult(success: false, message: 'Erreur: $e');
+    }
+  }
+
   static Future<Map<String, dynamic>> _mapTrajet(
     Map<String, dynamic> json,
   ) async {

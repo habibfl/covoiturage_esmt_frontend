@@ -224,60 +224,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
             child: Column(
               children: [
-                _SectionLabel('Mon compte'),
-                _SettingsGroup(
-                  rows: isDriver
-                      ? [
-                          _SettingsRow(
-                            icon: CupertinoIcons.car_detailed,
-                            color: AppColors.accent,
-                            label: 'Mon vehicule',
-                            onTap: () => context.go('/add-vehicle'),
-                          ),
-                          _SettingsRow(
-                            icon: CupertinoIcons.person,
-                            color: AppColors.primary,
-                            label: 'Infos personnelles',
-                            onTap: () => context.go('/personal-info'),
-                          ),
-                        ]
-                      : [
-                          _SettingsRow(
-                            icon: CupertinoIcons.person,
-                            color: AppColors.primary,
-                            label: 'Infos personnelles',
-                            onTap: () => context.go('/personal-info'),
-                          ),
-                          _SettingsRow(
-                            icon: CupertinoIcons.add_circled,
-                            color: AppColors.accent,
-                            label: 'Ajouter un vehicule et devenir conducteur',
-                            onTap: () => context.go('/add-vehicle'),
-                          ),
-                        ],
-                ),
-                const SizedBox(height: 20),
                 _SectionLabel('Activite'),
-                _SettingsGroup(
-                  rows: [
-                    if (isDriver)
-                      _SettingsRow(
-                        icon: CupertinoIcons.tray_full,
-                        color: AppColors.primary,
-                        label: 'Demandes de reservation',
-                        onTap: () => context.go('/trip-requests'),
-                        trailing: _pendingRequests > 0
-                            ? _CountBadge(count: _pendingRequests)
-                            : null,
-                      ),
-                    _SettingsRow(
-                      icon: CupertinoIcons.clock,
-                      color: AppColors.statusOrange,
-                      label: 'Historique des trajets',
-                      onTap: () => context.go('/trip-history'),
-                    ),
-                  ],
-                ),
+_SettingsGroup(
+  rows: [
+    if (isDriver) ...[
+      _SettingsRow(
+        icon: CupertinoIcons.car_detailed,
+        color: AppColors.accent,
+        label: 'Mes trajets',
+        onTap: () => context.go('/my-trips'),
+      ),
+      _SettingsRow(
+        icon: CupertinoIcons.tray_full,
+        color: AppColors.primary,
+        label: 'Demandes de reservation',
+        onTap: () => context.go('/trip-requests'),
+        trailing: _pendingRequests > 0
+            ? _CountBadge(count: _pendingRequests)
+            : null,
+      ),
+    ],
+    _SettingsRow(
+      icon: CupertinoIcons.clock,
+      color: AppColors.statusOrange,
+      label: 'Historique des trajets',
+      onTap: () => context.go('/trip-history'),
+    ),
+  ],
+),
                 const SizedBox(height: 20),
                 _SectionLabel('Preferences'),
                 _SettingsGroup(

@@ -1,14 +1,8 @@
-import 'dart:async';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 
 class FirebaseService {
-  static bool _initialized = false;
-
-  static Future<void> init() async {
-    if (_initialized) return;
-    await Firebase.initializeApp();
-    _initialized = true;
+  static DatabaseReference _locationRef(String tripId) {
+    return FirebaseDatabase.instance.ref('trips/$tripId/location');
   }
 
   static Future<void> updateLocation(
@@ -16,18 +10,25 @@ class FirebaseService {
     double lat,
     double lng,
   ) async {
-    await init();
-    final ref = FirebaseDatabase.instance.ref('trips/$tripId/location');
-    await ref.set({
-      'lat': lat,
-      'lng': lng,
-      'ts': DateTime.now().toIso8601String(),
-    });
+    try {
+      await _locationRef(tripId).set({
+        'lat': lat,
+        'lng': lng,
+        'timestamp': ServerValue.timestamp,
+      });
+    } catch (_) {
+      // Echec silencieux : pas d'impact bloquant si Firebase est indisponible.
+    }
   }
 
   static Stream<DatabaseEvent> listenLocation(String tripId) {
-    // Note: caller must ensure FirebaseService.init() was called or access will throw
-    final ref = FirebaseDatabase.instance.ref('trips/$tripId/location');
-    return ref.onValue;
+    return _locationRef(tripId).onValue;
+  }
+
+  static Future<void> clearLocation(String tripId) async {
+    try {
+      final ref = FirebaseDatabase.instance.ref('trips/$tripId/location');
+      await ref.remove();
+    } catch (_) {}
   }
 }

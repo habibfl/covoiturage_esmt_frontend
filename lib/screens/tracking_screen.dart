@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -5,6 +8,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../constants/colors.dart';
 import '../services/error_utils.dart';
+import '../services/firebase_service.dart';
 import '../services/reservation_service.dart';
 import '../services/trip_service.dart';
 import '../widgets/address_timeline_tile.dart';
@@ -27,11 +31,25 @@ class _TrackingScreenState extends State<TrackingScreen> {
   Map<String, dynamic>? _trip;
   String? _reservationId;
   String? _status;
+  String? _tripId;
+
+  GoogleMapController? _mapController;
+  StreamSubscription<DatabaseEvent>? _locationSub;
+  LatLng? _driverPosition;
+  DateTime? _lastUpdate;
+
+  static const Duration _freshnessWindow = Duration(minutes: 2);
 
   @override
   void initState() {
     super.initState();
     _init();
+  }
+
+  @override
+  void dispose() {
+    _locationSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _init() async {
@@ -49,8 +67,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
         tripId = active['trajetId']?.toString();
         status = active['statutReservation']?.toString();
       }
-    } else if (active != null &&
-        active['id']?.toString() == reservationId) {
+    } else if (active != null && active['id']?.toString() == reservationId) {
       status = active['statutReservation']?.toString();
     }
 
@@ -68,14 +85,47 @@ class _TrackingScreenState extends State<TrackingScreen> {
       _trip = trip;
       _reservationId = reservationId;
       _status = status;
+      _tripId = tripId;
       _loading = false;
+    });
+
+    if (tripId != null) {
+      _listenToLocation(tripId);
+    }
+  }
+
+  void _listenToLocation(String tripId) {
+    _locationSub?.cancel();
+    _locationSub = FirebaseService.listenLocation(tripId).listen((event) {
+      final data = event.snapshot.value;
+      if (data is! Map) return;
+      final lat = (data['lat'] as num?)?.toDouble();
+      final lng = (data['lng'] as num?)?.toDouble();
+      final ts = data['timestamp'];
+      if (lat == null || lng == null) return;
+
+      DateTime? updatedAt;
+      if (ts is int) {
+        updatedAt = DateTime.fromMillisecondsSinceEpoch(ts);
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _driverPosition = LatLng(lat, lng);
+        _lastUpdate = updatedAt;
+      });
+
+      if (_mapController != null) {
+        _mapController!.animateCamera(
+          CameraUpdate.newLatLng(LatLng(lat, lng)),
+        );
+      }
     });
   }
 
-  double? _toDouble(dynamic value) {
-    if (value == null) return null;
-    if (value is num) return value.toDouble();
-    return double.tryParse(value.toString());
+  bool get _isPositionFresh {
+    if (_driverPosition == null || _lastUpdate == null) return false;
+    return DateTime.now().difference(_lastUpdate!) < _freshnessWindow;
   }
 
   Future<void> _confirmCancel() async {
@@ -175,26 +225,19 @@ class _TrackingScreenState extends State<TrackingScreen> {
     final arrival = trip['arrival']?.toString() ?? 'Arrivee';
     final driverName = trip['driverName']?.toString() ?? '';
     final vehicle = trip['vehicle']?.toString() ?? '';
-    final latDepart = _toDouble(trip['latDepart']);
-    final lngDepart = _toDouble(trip['lngDepart']);
-    final latArrivee = _toDouble(trip['latArrivee']);
-    final lngArrivee = _toDouble(trip['lngArrivee']);
-    final hasCoordinates = latDepart != null &&
-        lngDepart != null &&
-        latArrivee != null &&
-        lngArrivee != null;
     final isRejected = _status == 'REJETEE';
 
     return Scaffold(
       body: Stack(
         children: [
-          if (hasCoordinates)
-            _TrackingMap(
-              origin: LatLng(latDepart, lngDepart),
-              destination: LatLng(latArrivee, lngArrivee),
-            )
-          else
-            const _MapFallback(),
+          _isPositionFresh
+              ? _LiveMap(
+                  position: _driverPosition!,
+                  onMapCreated: (controller) => _mapController = controller,
+                )
+              : const _MapFallback(
+                  text: 'En attente du demarrage du trajet par le conducteur',
+                ),
           Positioned(
             top: MediaQuery.of(context).padding.top + 16,
             left: 16,
@@ -295,7 +338,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
                       DriverProfileCard(
                         name: driverName,
                         vehicle: vehicle,
-                        rating: _toDouble(trip['rating']) ?? 0,
+                        rating: 0,
                         compact: true,
                       )
                     else
@@ -341,6 +384,33 @@ class _TrackingScreenState extends State<TrackingScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _LiveMap extends StatelessWidget {
+  final LatLng position;
+  final ValueChanged<GoogleMapController> onMapCreated;
+
+  const _LiveMap({required this.position, required this.onMapCreated});
+
+  @override
+  Widget build(BuildContext context) {
+    return GoogleMap(
+      initialCameraPosition: CameraPosition(target: position, zoom: 15),
+      onMapCreated: onMapCreated,
+      padding: EdgeInsets.zero,
+      zoomControlsEnabled: false,
+      myLocationButtonEnabled: false,
+      markers: {
+        Marker(
+          markerId: const MarkerId('driver'),
+          position: position,
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+            BitmapDescriptor.hueOrange,
+          ),
+        ),
+      },
     );
   }
 }
@@ -395,37 +465,10 @@ class _StatusBanner extends StatelessWidget {
   }
 }
 
-class _TrackingMap extends StatelessWidget {
-  final LatLng origin;
-  final LatLng destination;
-
-  const _TrackingMap({required this.origin, required this.destination});
-
-  @override
-  Widget build(BuildContext context) {
-    return GoogleMap(
-      initialCameraPosition: CameraPosition(target: origin, zoom: 14),
-      padding: EdgeInsets.zero,
-      zoomControlsEnabled: false,
-      myLocationButtonEnabled: false,
-      polylines: {
-        Polyline(
-          polylineId: const PolylineId('route'),
-          points: [origin, destination],
-          color: AppColors.primary,
-          width: 5,
-        ),
-      },
-      markers: {
-        Marker(markerId: const MarkerId('origin'), position: origin),
-        Marker(markerId: const MarkerId('dest'), position: destination),
-      },
-    );
-  }
-}
-
 class _MapFallback extends StatelessWidget {
-  const _MapFallback();
+  final String text;
+
+  const _MapFallback({required this.text});
 
   @override
   Widget build(BuildContext context) {
@@ -440,7 +483,8 @@ class _MapFallback extends StatelessWidget {
             Icon(CupertinoIcons.map, size: 40, color: AppColors.textSecondary),
             const SizedBox(height: 12),
             Text(
-              'Position du trajet indisponible',
+              text,
+              textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ],
