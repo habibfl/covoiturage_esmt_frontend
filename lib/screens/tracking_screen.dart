@@ -31,7 +31,6 @@ class _TrackingScreenState extends State<TrackingScreen> {
   Map<String, dynamic>? _trip;
   String? _reservationId;
   String? _status;
-  String? _tripId;
 
   GoogleMapController? _mapController;
   StreamSubscription<DatabaseEvent>? _locationSub;
@@ -85,7 +84,6 @@ class _TrackingScreenState extends State<TrackingScreen> {
       _trip = trip;
       _reservationId = reservationId;
       _status = status;
-      _tripId = tripId;
       _loading = false;
     });
 

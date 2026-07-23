@@ -95,8 +95,10 @@ class TripService {
           'id': json['id'],
           'departure': json['pointDepart'],
           'arrival': json['pointArrivee'],
+          'dateDepart': json['dateDepart'],
           'time': json['heureDepart'],
           'seats': json['nbPlacesDisponibles'],
+          'conducteurId': json['conducteurId'],
           'statut': json['statutTrajet'],
         };
       }).toList();
@@ -105,11 +107,18 @@ class TripService {
     }
   }
 
-  /// ATTENTION : route non confirmee par le backend, voir avertissement.
   static Future<TripPublishResult> updateTripStatus(
     String tripId,
-    String statutTrajet,
+    String newStatus,
   ) async {
+    final existing = await getTrajetById(tripId);
+    if (existing == null) {
+      return const TripPublishResult(
+        success: false,
+        message: 'Trajet introuvable.',
+      );
+    }
+
     final token = await AuthService.getToken();
     if (token == null || token.isEmpty) {
       return const TripPublishResult(
@@ -117,6 +126,7 @@ class TripService {
         message: 'Vous devez etre connecte.',
       );
     }
+
     try {
       final uri = Uri.parse('${ApiConstants.baseUrl}/trajets/$tripId');
       final response = await http
@@ -126,7 +136,15 @@ class TripService {
               'Content-Type': 'application/json',
               'Authorization': 'Bearer $token',
             },
-            body: jsonEncode({'statutTrajet': statutTrajet}),
+            body: jsonEncode({
+              'pointDepart': existing['departure'],
+              'pointArrivee': existing['arrival'],
+              'dateDepart': existing['dateDepart'],
+              'heureDepart': existing['time'],
+              'nbPlacesDisponibles': existing['seats'],
+              'conducteurId': existing['conducteurId'],
+              'statutTrajet': newStatus,
+            }),
           )
           .timeout(const Duration(seconds: 12));
 
@@ -162,8 +180,10 @@ class TripService {
       'vehicle': vehicle,
       'departure': json['pointDepart'],
       'arrival': json['pointArrivee'],
+      'dateDepart': json['dateDepart'],
       'time': json['heureDepart'],
       'seats': json['nbPlacesDisponibles'],
+      'conducteurId': conducteurId,
       'price': null,
       'statut': json['statutTrajet'],
       'latDepart': json['latDepart'],
