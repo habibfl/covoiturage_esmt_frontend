@@ -167,7 +167,7 @@ class _RequestCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final departure = request['departure']?.toString() ?? 'Depart';
     final arrival = request['arrival']?.toString() ?? 'Arrivee';
-    final passagerNom = request['passagerNom']?.toString() ?? 'Passager';
+    final passager = request['passager']?.toString() ?? 'Passager';
     final nbPlaces = request['nbPlacesReservees']?.toString() ?? '1';
 
     return Container(
@@ -199,7 +199,7 @@ class _RequestCard extends StatelessWidget {
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
-                  passagerNom,
+                  passager,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -224,6 +224,7 @@ class _RequestCard extends StatelessWidget {
                 child: CustomButton(
                   label: 'Refuser',
                   secondary: true,
+                  backgroundColor: AppColors.statusRed,
                   loading: processing,
                   onPressed: onReject,
                 ),
@@ -232,6 +233,7 @@ class _RequestCard extends StatelessWidget {
               Expanded(
                 child: CustomButton(
                   label: 'Accepter',
+                  backgroundColor: AppColors.accentGreen,
                   loading: processing,
                   onPressed: onAccept,
                 ),

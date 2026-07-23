@@ -9,6 +9,7 @@ class CustomButton extends StatelessWidget {
   final bool loading;
   final bool secondary;
   final IconData? icon;
+  final Color? backgroundColor;
 
   const CustomButton({
     super.key,
@@ -17,6 +18,7 @@ class CustomButton extends StatelessWidget {
     this.loading = false,
     this.secondary = false,
     this.icon,
+    this.backgroundColor,
   });
 
   @override
@@ -48,10 +50,22 @@ class CustomButton extends StatelessWidget {
         child: secondary
             ? OutlinedButton(
                 onPressed: disabled ? null : onPressed,
+                style: backgroundColor != null
+                    ? OutlinedButton.styleFrom(
+                        foregroundColor: backgroundColor,
+                        side: BorderSide(color: backgroundColor!, width: 1.5),
+                      )
+                    : null,
                 child: child,
               )
             : ElevatedButton(
                 onPressed: disabled ? null : onPressed,
+                style: backgroundColor != null
+                    ? ElevatedButton.styleFrom(
+                        backgroundColor: backgroundColor,
+                        foregroundColor: Colors.white,
+                      )
+                    : null,
                 child: child,
               ),
       ),

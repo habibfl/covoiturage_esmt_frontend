@@ -145,12 +145,12 @@ class _LoginScreenState extends State<LoginScreen> {
                             : null,
                       ),
                       Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: () {},
-                          child: const Text('Mot de passe oublie ?'),
-                        ),
-                      ),
+  alignment: Alignment.centerRight,
+  child: TextButton(
+    onPressed: () => context.go('/forgot-password'),
+    child: const Text('Mot de passe oublie ?'),
+  ),
+),
                       const SizedBox(height: 8),
                       CustomButton(
                         label: 'Se connecter',

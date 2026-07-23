@@ -107,6 +107,7 @@ class AppColors {
   static Color inputFill = _light.inputFill;
 
   static Color get accentGreenLight => accent;
+  static Color get accentGreen => accent;
   static Color get error => statusRed;
   static Color get star => starYellow;
 

@@ -7,12 +7,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'constants/colors.dart';
 import 'screens/add_vehicle_screen.dart';
 import 'screens/booking_screen.dart';
+import 'screens/forgot_password_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/personal_info_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/publish_trip_screen.dart';
 import 'screens/register_screen.dart';
+import 'screens/reset_password_screen.dart';
 import 'screens/search_screen.dart';
 import 'screens/tracking_screen.dart';
 import 'screens/trip_history_screen.dart';
@@ -49,6 +51,15 @@ class CovoiturageESMTApp extends StatelessWidget {
       GoRoute(
         path: '/register',
         pageBuilder: (context, state) => _iosPage(const RegisterScreen()),
+      ),
+      GoRoute(
+        path: '/forgot-password',
+        pageBuilder: (context, state) =>
+            _iosPage(const ForgotPasswordScreen()),
+      ),
+      GoRoute(
+        path: '/reset-password',
+        pageBuilder: (context, state) => _iosPage(const ResetPasswordScreen()),
       ),
       GoRoute(
         path: '/home',

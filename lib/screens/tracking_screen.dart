@@ -26,6 +26,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
   bool _cancelling = false;
   Map<String, dynamic>? _trip;
   String? _reservationId;
+  String? _status;
 
   @override
   void initState() {
@@ -34,15 +35,23 @@ class _TrackingScreenState extends State<TrackingScreen> {
   }
 
   Future<void> _init() async {
+    setState(() => _loading = true);
+
     String? tripId = widget.tripId;
     String? reservationId = widget.reservationId;
+    String? status;
+
+    final active = await ReservationService.getActiveReservation();
 
     if (tripId == null) {
-      final active = await ReservationService.getActiveReservation();
       if (active != null) {
         reservationId = active['id']?.toString();
         tripId = active['trajetId']?.toString();
+        status = active['statutReservation']?.toString();
       }
+    } else if (active != null &&
+        active['id']?.toString() == reservationId) {
+      status = active['statutReservation']?.toString();
     }
 
     Map<String, dynamic>? trip;
@@ -50,10 +59,15 @@ class _TrackingScreenState extends State<TrackingScreen> {
       trip = await TripService.getTrajetById(tripId);
     }
 
+    if (status != null && reservationId != null) {
+      await ReservationService.setLastSeenStatus(reservationId, status);
+    }
+
     if (!mounted) return;
     setState(() {
       _trip = trip;
       _reservationId = reservationId;
+      _status = status;
       _loading = false;
     });
   }
@@ -169,6 +183,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
         lngDepart != null &&
         latArrivee != null &&
         lngArrivee != null;
+    final isRejected = _status == 'REJETEE';
 
     return Scaffold(
       body: Stack(
@@ -204,7 +219,35 @@ class _TrackingScreenState extends State<TrackingScreen> {
           ),
           Positioned(
             top: MediaQuery.of(context).padding.top + 16,
+            right: 16,
+            child: InkWell(
+              onTap: _init,
+              customBorder: const CircleBorder(),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  shape: BoxShape.circle,
+                  boxShadow: [AppShadows.soft],
+                ),
+                child: Icon(
+                  CupertinoIcons.refresh,
+                  size: 20,
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 64,
             left: 64,
+            right: 64,
+            child: _StatusBanner(status: _status),
+          ),
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 110,
+            left: 16,
             right: 16,
             child: Container(
               padding: const EdgeInsets.all(16),
@@ -263,34 +306,90 @@ class _TrackingScreenState extends State<TrackingScreen> {
                     const SizedBox(height: 20),
                     Divider(color: AppColors.divider),
                     const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: CustomButton(
-                            label: 'Contact',
-                            secondary: true,
-                            icon: CupertinoIcons.phone,
-                            onPressed: () {},
+                    if (isRejected)
+                      CustomButton(
+                        label: 'Rechercher un autre trajet',
+                        onPressed: () => context.go('/search'),
+                      )
+                    else
+                      Row(
+                        children: [
+                          Expanded(
+                            child: CustomButton(
+                              label: 'Contact',
+                              secondary: true,
+                              icon: CupertinoIcons.phone,
+                              onPressed: () {},
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: CustomButton(
-                            label: 'Annuler',
-                            secondary: true,
-                            icon: CupertinoIcons.xmark,
-                            loading: _cancelling,
-                            onPressed: _confirmCancel,
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: CustomButton(
+                              label: 'Annuler',
+                              secondary: true,
+                              icon: CupertinoIcons.xmark,
+                              loading: _cancelling,
+                              onPressed: _confirmCancel,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
                   ],
                 ),
               );
             },
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _StatusBanner extends StatelessWidget {
+  final String? status;
+
+  const _StatusBanner({required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    if (status == null) return const SizedBox.shrink();
+
+    late Color color;
+    late String text;
+
+    switch (status) {
+      case 'EN_ATTENTE':
+        color = AppColors.statusOrange;
+        text = 'En attente de confirmation du conducteur';
+        break;
+      case 'CONFIRMEE':
+        color = AppColors.accentGreen;
+        text = 'Reservation confirmee';
+        break;
+      case 'REJETEE':
+        color = AppColors.statusRed;
+        text = 'Reservation refusee par le conducteur';
+        break;
+      default:
+        return const SizedBox.shrink();
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(100),
+        boxShadow: [AppShadows.soft],
+      ),
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        maxLines: 2,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }

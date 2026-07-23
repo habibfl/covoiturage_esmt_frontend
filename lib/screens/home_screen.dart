@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../constants/colors.dart';
 import '../services/auth_service.dart';
+import '../services/reservation_service.dart';
 import '../services/trip_service.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/trip_card.dart';
@@ -21,6 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _firstName = '';
   String _role = 'passenger';
   bool _roleLoaded = false;
+  int _notificationCount = 0;
   late Future<List<Map<String, dynamic>>> _tripsFuture;
 
   final _from = TextEditingController();
@@ -56,6 +58,24 @@ class _HomeScreenState extends State<HomeScreen> {
         _roleLoaded = true;
       }
     });
+
+    final count = await _computeNotificationCount(role);
+    if (!mounted) return;
+    setState(() => _notificationCount = count);
+  }
+
+  Future<int> _computeNotificationCount(String role) async {
+    if (role == 'driver') {
+      return ReservationService.countPendingForDriver();
+    }
+    final active = await ReservationService.getActiveReservation();
+    if (active == null) return 0;
+    final status = active['statutReservation']?.toString();
+    final id = active['id']?.toString();
+    if (status == null || id == null) return 0;
+    if (status != 'CONFIRMEE' && status != 'REJETEE') return 0;
+    final lastSeen = await ReservationService.getLastSeenStatus(id);
+    return lastSeen == status ? 0 : 1;
   }
 
   void _swap() {
@@ -100,33 +120,138 @@ class _HomeScreenState extends State<HomeScreen> {
     context.go(loggedIn ? '/home' : '/login');
   }
 
-  void _showNotifications() {
+  Future<void> _showNotifications() async {
+    final role = _role;
+    List<_NotificationItem> items = [];
+
+    if (role == 'driver') {
+      final requests = await ReservationService.getPendingRequests();
+      items = requests.map((r) {
+        final passager = r['passager']?.toString() ?? 'Un passager';
+        final departure = r['departure']?.toString() ?? '';
+        final arrival = r['arrival']?.toString() ?? '';
+        return _NotificationItem(
+          title: 'Nouvelle demande de reservation',
+          subtitle: '$passager - $departure -> $arrival',
+          route: '/trip-requests',
+        );
+      }).toList();
+    } else {
+      final active = await ReservationService.getActiveReservation();
+      if (active != null) {
+        final status = active['statutReservation']?.toString();
+        final id = active['id']?.toString();
+        if (status == 'CONFIRMEE' || status == 'REJETEE') {
+          items.add(
+            _NotificationItem(
+              title: status == 'CONFIRMEE'
+                  ? 'Reservation confirmee'
+                  : 'Reservation refusee',
+              subtitle: 'Voir les details de votre trajet',
+              route: '/tracking',
+            ),
+          );
+          if (id != null) {
+            await ReservationService.setLastSeenStatus(id, status!);
+          }
+        }
+      }
+    }
+
+    if (!mounted) return;
+    setState(() => _notificationCount = 0);
+
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              CupertinoIcons.bell,
-              size: 36,
-              color: AppColors.textSecondary,
+      builder: (context) {
+        if (items.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.all(28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  CupertinoIcons.bell,
+                  size: 36,
+                  color: AppColors.textSecondary,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Aucune notification pour le moment',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-            Text(
-              'Aucune notification pour le moment',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
+          );
+        }
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.divider,
+                  borderRadius: BorderRadius.circular(100),
+                ),
+              ),
+              const SizedBox(height: 16),
+              for (final item in items)
+                InkWell(
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.go(item.route);
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    child: Row(
+                      children: [
+                        Icon(
+                          CupertinoIcons.bell_fill,
+                          size: 18,
+                          color: AppColors.primary,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.title,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(fontWeight: FontWeight.w600),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                item.subtitle,
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          CupertinoIcons.chevron_right,
+                          size: 16,
+                          color: AppColors.textSecondary,
+                        ),
+                      ],
+                    ),
                   ),
-            ),
-          ],
-        ),
-      ),
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -146,6 +271,7 @@ class _HomeScreenState extends State<HomeScreen> {
               displayName: displayName,
               initial: initial,
               isDriver: isDriver,
+              notificationCount: _notificationCount,
               onProfile: () => context.go('/profile'),
               onNotifications: _showNotifications,
               onBrandTap: _goBrandTarget,
@@ -299,10 +425,23 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
+class _NotificationItem {
+  final String title;
+  final String subtitle;
+  final String route;
+
+  const _NotificationItem({
+    required this.title,
+    required this.subtitle,
+    required this.route,
+  });
+}
+
 class _Header extends StatelessWidget {
   final String displayName;
   final String initial;
   final bool isDriver;
+  final int notificationCount;
   final VoidCallback onProfile;
   final VoidCallback onNotifications;
   final VoidCallback onBrandTap;
@@ -311,6 +450,7 @@ class _Header extends StatelessWidget {
     required this.displayName,
     required this.initial,
     required this.isDriver,
+    required this.notificationCount,
     required this.onProfile,
     required this.onNotifications,
     required this.onBrandTap,
@@ -366,18 +506,49 @@ class _Header extends StatelessWidget {
           InkWell(
             onTap: onNotifications,
             customBorder: const CircleBorder(),
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: AppColors.inputFill,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                CupertinoIcons.bell,
-                size: 20,
-                color: AppColors.textPrimary,
-              ),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppColors.inputFill,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    CupertinoIcons.bell,
+                    size: 20,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                if (notificationCount > 0)
+                  Positioned(
+                    right: -2,
+                    top: -2,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: AppColors.statusRed,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.surface, width: 2),
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 16,
+                        minHeight: 16,
+                      ),
+                      child: Text(
+                        '$notificationCount',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
           const SizedBox(width: 10),

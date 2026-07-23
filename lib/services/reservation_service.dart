@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../constants/api_constants.dart';
 import 'auth_service.dart';
@@ -147,13 +148,21 @@ class ReservationService {
       }
       final decoded = jsonDecode(response.body);
       if (decoded is! List || decoded.isEmpty) return null;
-      final active = decoded.cast<Map<String, dynamic>>().firstWhere(
-            (r) =>
-                r['statutReservation'] == 'EN_ATTENTE' ||
-                r['statutReservation'] == 'CONFIRMEE',
-            orElse: () => {},
-          );
-      return active.isEmpty ? null : active;
+
+      final relevant = decoded.cast<Map<String, dynamic>>().where((r) {
+        final statut = r['statutReservation'];
+        return statut == 'EN_ATTENTE' ||
+            statut == 'CONFIRMEE' ||
+            statut == 'REJETEE';
+      }).toList();
+      if (relevant.isEmpty) return null;
+
+      relevant.sort((a, b) {
+        final idA = int.tryParse(a['id']?.toString() ?? '') ?? 0;
+        final idB = int.tryParse(b['id']?.toString() ?? '') ?? 0;
+        return idB.compareTo(idA);
+      });
+      return relevant.first;
     } catch (_) {
       return null;
     }
@@ -287,7 +296,7 @@ class ReservationService {
         if (res['statutReservation'] == 'EN_ATTENTE') {
           requests.add({
             'reservationId': res['id']?.toString(),
-            'passagerNom': res['passagerNom'] ?? res['passagerName'],
+            'passager': res['passager'],
             'nbPlacesReservees': res['nbPlacesReservees'],
             'tripId': tripId,
             'departure': trip['departure'],
@@ -303,5 +312,18 @@ class ReservationService {
   static Future<int> countPendingForDriver() async {
     final requests = await getPendingRequests();
     return requests.length;
+  }
+
+  static Future<String?> getLastSeenStatus(String reservationId) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('res_status_$reservationId');
+  }
+
+  static Future<void> setLastSeenStatus(
+    String reservationId,
+    String status,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('res_status_$reservationId', status);
   }
 }
