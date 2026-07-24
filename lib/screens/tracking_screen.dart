@@ -7,11 +7,12 @@ import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../constants/colors.dart';
+import '../services/auth_service.dart';
 import '../services/error_utils.dart';
 import '../services/firebase_service.dart';
+import '../services/location_tracking_service.dart';
 import '../services/reservation_service.dart';
 import '../services/trip_service.dart';
-import '../widgets/address_timeline_tile.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/driver_profile_card.dart';
 
@@ -27,17 +28,17 @@ class TrackingScreen extends StatefulWidget {
 
 class _TrackingScreenState extends State<TrackingScreen> {
   bool _loading = true;
-  bool _cancelling = false;
+  bool _isDriver = false;
+  bool _busy = false;
+
   Map<String, dynamic>? _trip;
+  String? _tripId;
   String? _reservationId;
   String? _status;
 
   GoogleMapController? _mapController;
   StreamSubscription<DatabaseEvent>? _locationSub;
-  LatLng? _driverPosition;
-  DateTime? _lastUpdate;
-
-  static const Duration _freshnessWindow = Duration(minutes: 2);
+  LatLng? _livePosition;
 
   @override
   void initState() {
@@ -54,34 +55,62 @@ class _TrackingScreenState extends State<TrackingScreen> {
   Future<void> _init() async {
     setState(() => _loading = true);
 
-    String? tripId = widget.tripId;
-    String? reservationId = widget.reservationId;
-    String? status;
-
-    final active = await ReservationService.getActiveReservation();
-
-    if (tripId == null) {
-      if (active != null) {
-        reservationId = active['id']?.toString();
-        tripId = active['trajetId']?.toString();
-        status = active['statutReservation']?.toString();
-      }
-    } else if (active != null && active['id']?.toString() == reservationId) {
-      status = active['statutReservation']?.toString();
-    }
+    final role = await AuthService.getRole();
+    final isDriver = role == 'driver';
 
     Map<String, dynamic>? trip;
-    if (tripId != null) {
-      trip = await TripService.getTrajetById(tripId);
-    }
+    String? tripId;
+    String? reservationId;
+    String? status;
 
-    if (status != null && reservationId != null) {
-      await ReservationService.setLastSeenStatus(reservationId, status);
+    if (isDriver) {
+      final userId = await AuthService.getUserId();
+      if (userId != null) {
+        final trips = await TripService.getTrajetsByConducteur(userId);
+        Map<String, dynamic>? current;
+        for (final t in trips) {
+          if (t['statut'] == 'EN_COURS') {
+            current = t;
+            break;
+          }
+        }
+        current ??= trips.firstWhere(
+          (t) => t['statut'] == 'PLANIFIE',
+          orElse: () => {},
+        );
+        if (current.isNotEmpty) {
+          tripId = current['id']?.toString();
+          trip = await TripService.getTrajetById(tripId!);
+        }
+      }
+    } else {
+      tripId = widget.tripId;
+      reservationId = widget.reservationId;
+
+      final active = await ReservationService.getActiveReservation();
+      if (tripId == null) {
+        if (active != null) {
+          reservationId = active['id']?.toString();
+          tripId = active['trajetId']?.toString();
+          status = active['statutReservation']?.toString();
+        }
+      } else if (active != null && active['id']?.toString() == reservationId) {
+        status = active['statutReservation']?.toString();
+      }
+
+      if (tripId != null) {
+        trip = await TripService.getTrajetById(tripId);
+      }
+      if (status != null && reservationId != null) {
+        await ReservationService.setLastSeenStatus(reservationId, status);
+      }
     }
 
     if (!mounted) return;
     setState(() {
+      _isDriver = isDriver;
       _trip = trip;
+      _tripId = tripId;
       _reservationId = reservationId;
       _status = status;
       _loading = false;
@@ -92,6 +121,18 @@ class _TrackingScreenState extends State<TrackingScreen> {
     }
   }
 
+  Future<void> _refreshStatus() async {
+    if (_isDriver) {
+      await _init();
+      return;
+    }
+    final active = await ReservationService.getActiveReservation();
+    if (!mounted) return;
+    if (active != null && active['id']?.toString() == _reservationId) {
+      setState(() => _status = active['statutReservation']?.toString());
+    }
+  }
+
   void _listenToLocation(String tripId) {
     _locationSub?.cancel();
     _locationSub = FirebaseService.listenLocation(tripId).listen((event) {
@@ -99,31 +140,79 @@ class _TrackingScreenState extends State<TrackingScreen> {
       if (data is! Map) return;
       final lat = (data['lat'] as num?)?.toDouble();
       final lng = (data['lng'] as num?)?.toDouble();
-      final ts = data['timestamp'];
       if (lat == null || lng == null) return;
 
-      DateTime? updatedAt;
-      if (ts is int) {
-        updatedAt = DateTime.fromMillisecondsSinceEpoch(ts);
-      }
-
+      final position = LatLng(lat, lng);
       if (!mounted) return;
-      setState(() {
-        _driverPosition = LatLng(lat, lng);
-        _lastUpdate = updatedAt;
-      });
+      setState(() => _livePosition = position);
 
       if (_mapController != null) {
-        _mapController!.animateCamera(
-          CameraUpdate.newLatLng(LatLng(lat, lng)),
-        );
+        _mapController!.animateCamera(CameraUpdate.newLatLng(position));
       }
     });
   }
 
-  bool get _isPositionFresh {
-    if (_driverPosition == null || _lastUpdate == null) return false;
-    return DateTime.now().difference(_lastUpdate!) < _freshnessWindow;
+  Future<void> _startTrip() async {
+    final tripId = _tripId;
+    if (tripId == null) return;
+    setState(() => _busy = true);
+
+    final started = await LocationTrackingService.startTracking(tripId);
+    if (!mounted) return;
+
+    if (!started) {
+      setState(() => _busy = false);
+      showErrorSnackBar(
+        context,
+        'Impossible d\'activer le suivi GPS : autorisez la geolocalisation dans les parametres de votre navigateur.',
+      );
+      return;
+    }
+
+    final result = await TripService.updateTripStatus(tripId, 'EN_COURS');
+    if (!mounted) return;
+
+    if (!result.success) {
+      await LocationTrackingService.stopTracking();
+      setState(() => _busy = false);
+      showErrorSnackBar(
+        context,
+        result.message ?? 'Impossible de demarrer le trajet.',
+        isAuthError: result.isAuthError,
+      );
+      return;
+    }
+
+    setState(() => _busy = false);
+    await _init();
+  }
+
+  Future<void> _finishTrip() async {
+    final tripId = _tripId;
+    if (tripId == null) return;
+    setState(() => _busy = true);
+
+    await LocationTrackingService.stopTracking();
+    final result = await TripService.updateTripStatus(tripId, 'TERMINE');
+    if (!mounted) return;
+
+    if (result.success) {
+      await FirebaseService.clearLocation(tripId);
+    }
+    setState(() => _busy = false);
+
+    if (result.success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Trajet termine')),
+      );
+      context.go('/home');
+    } else {
+      showErrorSnackBar(
+        context,
+        result.message ?? 'Impossible de terminer le trajet.',
+        isAuthError: result.isAuthError,
+      );
+    }
   }
 
   Future<void> _confirmCancel() async {
@@ -153,10 +242,10 @@ class _TrackingScreenState extends State<TrackingScreen> {
       return;
     }
 
-    setState(() => _cancelling = true);
+    setState(() => _busy = true);
     final result = await ReservationService.cancelReservation(_reservationId!);
     if (!mounted) return;
-    setState(() => _cancelling = false);
+    setState(() => _busy = false);
 
     if (result.success) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -218,6 +307,100 @@ class _TrackingScreenState extends State<TrackingScreen> {
       );
     }
 
+    return _isDriver ? _buildDriverView(context) : _buildPassengerView(context);
+  }
+
+  // ===========================================================
+  // VUE CONDUCTEUR
+  // ===========================================================
+  Widget _buildDriverView(BuildContext context) {
+    final trip = _trip!;
+    final departure = trip['departure']?.toString() ?? 'Depart';
+    final arrival = trip['arrival']?.toString() ?? 'Arrivee';
+    final statut = trip['statut']?.toString() ?? 'PLANIFIE';
+    final isRunning = statut == 'EN_COURS';
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: Stack(
+        children: [
+          // Carte plein ecran en fond
+          Positioned.fill(
+            child: (isRunning && _livePosition != null)
+                ? _LiveMap(
+                    position: _livePosition!,
+                    onMapCreated: (controller) => _mapController = controller,
+                  )
+                : _MapFallback(
+                    text: isRunning
+                        ? 'Activation du suivi GPS en cours...'
+                        : 'Trajet pas encore demarre',
+                  ),
+          ),
+
+          // Barre du haut flottante : retour + trajet compact + refresh
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+              child: _FloatingTopRow(
+                onBack: () => context.go('/home'),
+                onRefresh: _refreshStatus,
+                compactLabel: '$departure -> $arrival',
+              ),
+            ),
+          ),
+
+          // Panneau du bas compact, en bottom sheet
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: SafeArea(
+              top: false,
+              child: _BottomSheetPanel(
+                child: Row(
+                  children: [
+                    Icon(
+                      isRunning
+                          ? CupertinoIcons.location_solid
+                          : CupertinoIcons.location,
+                      size: 18,
+                      color: isRunning
+                          ? AppColors.accentGreen
+                          : AppColors.textSecondary,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        isRunning
+                            ? 'Position partagee avec le(s) passager(s)'
+                            : 'Pret a demarrer',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    SizedBox(
+                      width: 150,
+                      child: CustomButton(
+                        label: isRunning ? 'Terminer' : 'Demarrer',
+                        backgroundColor:
+                            isRunning ? AppColors.statusRed : null,
+                        loading: _busy,
+                        onPressed: isRunning ? _finishTrip : _startTrip,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ===========================================================
+  // VUE PASSAGER
+  // ===========================================================
+  Widget _buildPassengerView(BuildContext context) {
     final trip = _trip!;
     final departure = trip['departure']?.toString() ?? 'Depart';
     final arrival = trip['arrival']?.toString() ?? 'Arrivee';
@@ -226,112 +409,44 @@ class _TrackingScreenState extends State<TrackingScreen> {
     final isRejected = _status == 'REJETEE';
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: Stack(
         children: [
-          _isPositionFresh
-              ? _LiveMap(
-                  position: _driverPosition!,
-                  onMapCreated: (controller) => _mapController = controller,
-                )
-              : const _MapFallback(
-                  text: 'En attente du demarrage du trajet par le conducteur',
-                ),
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 16,
-            left: 16,
-            child: InkWell(
-              onTap: () => context.go('/home'),
-              customBorder: const CircleBorder(),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  shape: BoxShape.circle,
-                  boxShadow: [AppShadows.soft],
-                ),
-                child: Icon(
-                  CupertinoIcons.back,
-                  size: 20,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 16,
-            right: 16,
-            child: InkWell(
-              onTap: _init,
-              customBorder: const CircleBorder(),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  shape: BoxShape.circle,
-                  boxShadow: [AppShadows.soft],
-                ),
-                child: Icon(
-                  CupertinoIcons.refresh,
-                  size: 20,
-                  color: AppColors.primary,
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 64,
-            left: 64,
-            right: 64,
-            child: _StatusBanner(status: _status),
-          ),
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 110,
-            left: 16,
-            right: 16,
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [AppShadows.soft],
-              ),
-              child: AddressTimelineTile(
-                departure: departure,
-                arrival: arrival,
-                compact: true,
-              ),
-            ),
-          ),
-          DraggableScrollableSheet(
-            initialChildSize: 0.32,
-            minChildSize: 0.2,
-            maxChildSize: 0.85,
-            builder: (context, controller) {
-              return Container(
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(20),
+          // Carte plein ecran en fond
+          Positioned.fill(
+            child: _livePosition != null
+                ? _LiveMap(
+                    position: _livePosition!,
+                    onMapCreated: (controller) => _mapController = controller,
+                  )
+                : const _MapFallback(
+                    text:
+                        'En attente du demarrage du trajet par le conducteur',
                   ),
-                  boxShadow: [AppShadows.soft],
-                ),
-                child: ListView(
-                  controller: controller,
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          ),
+
+          // Barre du haut flottante : retour + trajet compact + statut + refresh
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+              child: _FloatingTopRow(
+                onBack: () => context.go('/home'),
+                onRefresh: _refreshStatus,
+                compactLabel: '$departure -> $arrival',
+                statusChip: _StatusChip(status: _status),
+              ),
+            ),
+          ),
+
+          // Panneau du bas compact : conducteur + boutons sur une ligne
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: SafeArea(
+              top: false,
+              child: _BottomSheetPanel(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: AppColors.divider,
-                          borderRadius: BorderRadius.circular(100),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
                     if (driverName.isNotEmpty)
                       DriverProfileCard(
                         name: driverName,
@@ -344,9 +459,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
                         'Conducteur non renseigne',
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
-                    const SizedBox(height: 20),
-                    Divider(color: AppColors.divider),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 10),
                     if (isRejected)
                       CustomButton(
                         label: 'Rechercher un autre trajet',
@@ -363,13 +476,13 @@ class _TrackingScreenState extends State<TrackingScreen> {
                               onPressed: () {},
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 10),
                           Expanded(
                             child: CustomButton(
                               label: 'Annuler',
                               secondary: true,
                               icon: CupertinoIcons.xmark,
-                              loading: _cancelling,
+                              loading: _busy,
                               onPressed: _confirmCancel,
                             ),
                           ),
@@ -377,9 +490,186 @@ class _TrackingScreenState extends State<TrackingScreen> {
                       ),
                   ],
                 ),
-              );
-            },
+              ),
+            ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+// ===========================================================
+// WIDGETS COMPACTS
+// ===========================================================
+
+/// Barre flottante du haut : bouton retour, trajet compact en pastille,
+/// statut (optionnel) et bouton refresh, le tout sur une seule ligne.
+class _FloatingTopRow extends StatelessWidget {
+  final VoidCallback onBack;
+  final VoidCallback onRefresh;
+  final String compactLabel;
+  final Widget? statusChip;
+
+  const _FloatingTopRow({
+    required this.onBack,
+    required this.onRefresh,
+    required this.compactLabel,
+    this.statusChip,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        _RoundIconButton(icon: CupertinoIcons.back, onTap: onBack),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [AppShadows.soft],
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  CupertinoIcons.location,
+                  size: 15,
+                  color: AppColors.primary,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    compactLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                ),
+                if (statusChip != null) ...[
+                  const SizedBox(width: 8),
+                  statusChip!,
+                ],
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        _RoundIconButton(icon: CupertinoIcons.refresh, onTap: onRefresh),
+      ],
+    );
+  }
+}
+
+class _RoundIconButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _RoundIconButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      customBorder: const CircleBorder(),
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          shape: BoxShape.circle,
+          boxShadow: [AppShadows.soft],
+        ),
+        child: Icon(icon, size: 18, color: AppColors.primary),
+      ),
+    );
+  }
+}
+
+/// Petite pastille de statut, compacte, a placer a cote du trajet
+/// dans la barre du haut (remplace l'ancien bandeau pleine largeur).
+class _StatusChip extends StatelessWidget {
+  final String? status;
+
+  const _StatusChip({required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    if (status == null) return const SizedBox.shrink();
+
+    late Color color;
+    late String text;
+
+    switch (status) {
+      case 'EN_ATTENTE':
+        color = AppColors.statusOrange;
+        text = 'En attente';
+        break;
+      case 'CONFIRMEE':
+        color = AppColors.accentGreen;
+        text = 'Confirmee';
+        break;
+      case 'REJETEE':
+        color = AppColors.statusRed;
+        text = 'Refusee';
+        break;
+      default:
+        return const SizedBox.shrink();
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+/// Panneau flottant du bas, en forme de bottom sheet compacte avec
+/// poignee, coins arrondis en haut et ombre douce.
+class _BottomSheetPanel extends StatelessWidget {
+  final Widget child;
+
+  const _BottomSheetPanel({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [AppShadows.soft],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 36,
+            height: 4,
+            margin: const EdgeInsets.only(bottom: 10),
+            decoration: BoxDecoration(
+              color: AppColors.divider,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          child,
         ],
       ),
     );
@@ -397,7 +687,6 @@ class _LiveMap extends StatelessWidget {
     return GoogleMap(
       initialCameraPosition: CameraPosition(target: position, zoom: 15),
       onMapCreated: onMapCreated,
-      padding: EdgeInsets.zero,
       zoomControlsEnabled: false,
       myLocationButtonEnabled: false,
       markers: {
@@ -409,56 +698,6 @@ class _LiveMap extends StatelessWidget {
           ),
         ),
       },
-    );
-  }
-}
-
-class _StatusBanner extends StatelessWidget {
-  final String? status;
-
-  const _StatusBanner({required this.status});
-
-  @override
-  Widget build(BuildContext context) {
-    if (status == null) return const SizedBox.shrink();
-
-    late Color color;
-    late String text;
-
-    switch (status) {
-      case 'EN_ATTENTE':
-        color = AppColors.statusOrange;
-        text = 'En attente de confirmation du conducteur';
-        break;
-      case 'CONFIRMEE':
-        color = AppColors.accentGreen;
-        text = 'Reservation confirmee';
-        break;
-      case 'REJETEE':
-        color = AppColors.statusRed;
-        text = 'Reservation refusee par le conducteur';
-        break;
-      default:
-        return const SizedBox.shrink();
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(100),
-        boxShadow: [AppShadows.soft],
-      ),
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        maxLines: 2,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
     );
   }
 }
