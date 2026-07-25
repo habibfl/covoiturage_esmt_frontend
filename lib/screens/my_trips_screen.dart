@@ -39,6 +39,7 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
   Future<void> _load() async {
     setState(() => _loading = true);
     final userId = await AuthService.getUserId();
+    if (!mounted) return;
     final trips = userId == null
         ? <Map<String, dynamic>>[]
         : await TripService.getTrajetsByConducteur(userId);
@@ -68,10 +69,11 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
 
     final result = await TripService.updateTripStatus(tripId, 'EN_COURS');
     if (!mounted) return;
-    setState(() => _busyTripId = null);
 
     if (!result.success) {
       await LocationTrackingService.stopTracking();
+      if (!mounted) return;
+      setState(() => _busyTripId = null);
       showErrorSnackBar(
         context,
         result.message ?? 'Impossible de demarrer le trajet cote serveur.',
@@ -80,6 +82,7 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
       return;
     }
 
+    setState(() => _busyTripId = null);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Suivi GPS actif')),
     );
@@ -92,12 +95,14 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
     setState(() => _busyTripId = tripId);
 
     await LocationTrackingService.stopTracking();
+    if (!mounted) return;
 
     final result = await TripService.updateTripStatus(tripId, 'TERMINE');
     if (!mounted) return;
 
     if (result.success) {
       await FirebaseService.clearLocation(tripId);
+      if (!mounted) return;
     }
 
     setState(() => _busyTripId = null);

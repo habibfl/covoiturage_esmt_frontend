@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../constants/colors.dart';
 import '../services/auth_service.dart';
+import '../services/error_utils.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/custom_input.dart';
 
@@ -61,8 +62,10 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
       );
       context.go('/profile');
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.message ?? 'Echec de la mise a jour')),
+      showErrorSnackBar(
+        context,
+        result.message ?? 'Echec de la mise a jour',
+        isAuthError: result.isAuthError,
       );
     }
   }

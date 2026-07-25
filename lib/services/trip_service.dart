@@ -18,6 +18,18 @@ class TripPublishResult {
   });
 }
 
+class TripsResult {
+  final List<Map<String, dynamic>> trips;
+  final bool success;
+  final String? errorMessage;
+
+  const TripsResult({
+    required this.trips,
+    required this.success,
+    this.errorMessage,
+  });
+}
+
 class TripService {
   static Future<Map<String, String>> _authHeaders() async {
     final token = await AuthService.getToken();
@@ -54,6 +66,46 @@ class TripService {
       return results;
     } catch (_) {
       return [];
+    }
+  }
+
+  static Future<TripsResult> getTrajetsWithStatus({
+    String? depart,
+    String? arrivee,
+  }) async {
+    try {
+      final query = <String, String>{};
+      if (depart != null && depart.isNotEmpty) query['depart'] = depart;
+      if (arrivee != null && arrivee.isNotEmpty) query['arrivee'] = arrivee;
+      final uri = Uri.parse('${ApiConstants.baseUrl}/trajets').replace(
+        queryParameters: query.isEmpty ? null : query,
+      );
+      final response = await http
+          .get(uri, headers: await _authHeaders())
+          .timeout(const Duration(seconds: 12));
+      if (response.statusCode != 200) {
+        logNetworkError('TripService.getTrajetsWithStatus', response);
+        return TripsResult(
+          trips: const [],
+          success: false,
+          errorMessage: extractErrorMessage(response),
+        );
+      }
+      final decoded = jsonDecode(response.body);
+      if (decoded is! List) {
+        return const TripsResult(trips: [], success: true);
+      }
+      final results = <Map<String, dynamic>>[];
+      for (final item in decoded.whereType<Map<String, dynamic>>()) {
+        results.add(await _mapTrajet(item));
+      }
+      return TripsResult(trips: results, success: true);
+    } catch (e) {
+      return const TripsResult(
+        trips: [],
+        success: false,
+        errorMessage: 'Impossible de contacter le serveur.',
+      );
     }
   }
 

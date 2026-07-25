@@ -56,6 +56,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
     setState(() => _loading = true);
 
     final role = await AuthService.getRole();
+    if (!mounted) return;
     final isDriver = role == 'driver';
 
     Map<String, dynamic>? trip;
@@ -65,8 +66,10 @@ class _TrackingScreenState extends State<TrackingScreen> {
 
     if (isDriver) {
       final userId = await AuthService.getUserId();
+      if (!mounted) return;
       if (userId != null) {
         final trips = await TripService.getTrajetsByConducteur(userId);
+        if (!mounted) return;
         Map<String, dynamic>? current;
         for (final t in trips) {
           if (t['statut'] == 'EN_COURS') {
@@ -81,6 +84,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
         if (current.isNotEmpty) {
           tripId = current['id']?.toString();
           trip = await TripService.getTrajetById(tripId!);
+          if (!mounted) return;
         }
       }
     } else {
@@ -88,6 +92,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
       reservationId = widget.reservationId;
 
       final active = await ReservationService.getActiveReservation();
+      if (!mounted) return;
       if (tripId == null) {
         if (active != null) {
           reservationId = active['id']?.toString();
@@ -100,9 +105,11 @@ class _TrackingScreenState extends State<TrackingScreen> {
 
       if (tripId != null) {
         trip = await TripService.getTrajetById(tripId);
+        if (!mounted) return;
       }
       if (status != null && reservationId != null) {
         await ReservationService.setLastSeenStatus(reservationId, status);
+        if (!mounted) return;
       }
     }
 
@@ -174,6 +181,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
 
     if (!result.success) {
       await LocationTrackingService.stopTracking();
+      if (!mounted) return;
       setState(() => _busy = false);
       showErrorSnackBar(
         context,
@@ -193,11 +201,14 @@ class _TrackingScreenState extends State<TrackingScreen> {
     setState(() => _busy = true);
 
     await LocationTrackingService.stopTracking();
+    if (!mounted) return;
+
     final result = await TripService.updateTripStatus(tripId, 'TERMINE');
     if (!mounted) return;
 
     if (result.success) {
       await FirebaseService.clearLocation(tripId);
+      if (!mounted) return;
     }
     setState(() => _busy = false);
 
@@ -234,10 +245,10 @@ class _TrackingScreenState extends State<TrackingScreen> {
         ],
       ),
     );
+    if (!mounted) return;
     if (confirm != true) return;
 
     if (_reservationId == null) {
-      if (!mounted) return;
       showErrorSnackBar(context, 'Aucune reservation a annuler.');
       return;
     }
@@ -324,7 +335,6 @@ class _TrackingScreenState extends State<TrackingScreen> {
       backgroundColor: AppColors.background,
       body: Stack(
         children: [
-          // Carte plein ecran en fond
           Positioned.fill(
             child: (isRunning && _livePosition != null)
                 ? _LiveMap(
@@ -337,8 +347,6 @@ class _TrackingScreenState extends State<TrackingScreen> {
                         : 'Trajet pas encore demarre',
                   ),
           ),
-
-          // Barre du haut flottante : retour + trajet compact + refresh
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
@@ -349,8 +357,6 @@ class _TrackingScreenState extends State<TrackingScreen> {
               ),
             ),
           ),
-
-          // Panneau du bas compact, en bottom sheet
           Align(
             alignment: Alignment.bottomCenter,
             child: SafeArea(
@@ -412,7 +418,6 @@ class _TrackingScreenState extends State<TrackingScreen> {
       backgroundColor: AppColors.background,
       body: Stack(
         children: [
-          // Carte plein ecran en fond
           Positioned.fill(
             child: _livePosition != null
                 ? _LiveMap(
@@ -424,8 +429,6 @@ class _TrackingScreenState extends State<TrackingScreen> {
                         'En attente du demarrage du trajet par le conducteur',
                   ),
           ),
-
-          // Barre du haut flottante : retour + trajet compact + statut + refresh
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
@@ -437,8 +440,6 @@ class _TrackingScreenState extends State<TrackingScreen> {
               ),
             ),
           ),
-
-          // Panneau du bas compact : conducteur + boutons sur une ligne
           Align(
             alignment: Alignment.bottomCenter,
             child: SafeArea(
@@ -503,8 +504,6 @@ class _TrackingScreenState extends State<TrackingScreen> {
 // WIDGETS COMPACTS
 // ===========================================================
 
-/// Barre flottante du haut : bouton retour, trajet compact en pastille,
-/// statut (optionnel) et bouton refresh, le tout sur une seule ligne.
 class _FloatingTopRow extends StatelessWidget {
   final VoidCallback onBack;
   final VoidCallback onRefresh;
@@ -590,8 +589,6 @@ class _RoundIconButton extends StatelessWidget {
   }
 }
 
-/// Petite pastille de statut, compacte, a placer a cote du trajet
-/// dans la barre du haut (remplace l'ancien bandeau pleine largeur).
 class _StatusChip extends StatelessWidget {
   final String? status;
 
@@ -639,8 +636,6 @@ class _StatusChip extends StatelessWidget {
   }
 }
 
-/// Panneau flottant du bas, en forme de bottom sheet compacte avec
-/// poignee, coins arrondis en haut et ombre douce.
 class _BottomSheetPanel extends StatelessWidget {
   final Widget child;
 

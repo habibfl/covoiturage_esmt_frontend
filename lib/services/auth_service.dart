@@ -46,7 +46,7 @@ class AuthResult {
 
 class AuthService {
   static final Uri _loginUrl = Uri.parse('${ApiConstants.baseUrl}/auth/login');
-  static final Uri _2faUrl = Uri.parse('${ApiConstants.baseUrl}/auth/login/2fa');
+  static final Uri _twoFaUrl = Uri.parse('${ApiConstants.baseUrl}/auth/login/2fa');
   static final Uri _registerUrl = Uri.parse('${ApiConstants.baseUrl}/auth/register');
   static final Uri _forgotUrl = Uri.parse('${ApiConstants.baseUrl}/auth/forgot-password');
   static final Uri _resetUrl = Uri.parse('${ApiConstants.baseUrl}/auth/reset-password');
@@ -111,7 +111,7 @@ class AuthService {
     try {
       final response = await http
           .post(
-            _2faUrl,
+            _twoFaUrl,
             headers: _jsonHeaders,
             body: jsonEncode({'email': email, 'code': code}),
           )
@@ -171,7 +171,7 @@ class AuthService {
           )
           .timeout(_timeout);
 
-      final _ = _tryDecode(response.body);
+      final body = _tryDecode(response.body);
 
       if (response.statusCode != 200 && response.statusCode != 201) {
         logNetworkError('AuthService.register', response);

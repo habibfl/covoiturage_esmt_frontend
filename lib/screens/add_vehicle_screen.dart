@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../constants/colors.dart';
 import '../services/auth_service.dart';
+import '../services/error_utils.dart';
 import '../services/vehicle_service.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/custom_input.dart';
@@ -68,10 +69,10 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
       if (!mounted) return;
       context.go('/profile');
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result.message ?? "Impossible d'enregistrer le vehicule"),
-        ),
+      showErrorSnackBar(
+        context,
+        result.message ?? "Impossible d'enregistrer le vehicule",
+        isAuthError: result.isAuthError,
       );
     }
   }
