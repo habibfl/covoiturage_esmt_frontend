@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'constants/colors.dart';
 import 'firebase_options.dart';
 import 'screens/add_vehicle_screen.dart';
+import 'screens/admin_dashboard_screen.dart';
 import 'screens/booking_screen.dart';
 import 'screens/forgot_password_screen.dart';
 import 'screens/home_screen.dart';
@@ -70,6 +71,10 @@ class CovoiturageESMTApp extends StatelessWidget {
       GoRoute(
         path: '/home',
         pageBuilder: (context, state) => _iosPage(const HomeScreen()),
+      ),
+      GoRoute(
+        path: '/admin',
+        pageBuilder: (context, state) => _iosPage(const AdminDashboardScreen()),
       ),
       GoRoute(
         path: '/search',

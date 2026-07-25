@@ -22,29 +22,30 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscure = true;
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() => _loading = true);
-    final email = _emailController.text.trim();
-    final result = await AuthService.login(
-      email,
-      _passwordController.text.trim(),
-    );
+  if (!_formKey.currentState!.validate()) return;
+  setState(() => _loading = true);
+  final email = _emailController.text.trim();
+  final result = await AuthService.login(
+    email,
+    _passwordController.text.trim(),
+  );
+  if (!mounted) return;
+  setState(() => _loading = false);
+
+  if (result.success) {
+    final isAdmin = await AuthService.isAdmin();
     if (!mounted) return;
-    setState(() => _loading = false);
-
-    if (result.success) {
-      context.go('/home');
-    } else if (result.twoFactorRequired) {
-      context.go('/verify-2fa', extra: email);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result.message ?? "Echec de l'authentification"),
-        ),
-      );
-    }
+    context.go(isAdmin ? '/admin' : '/home');
+  } else if (result.twoFactorRequired) {
+    context.go('/verify-2fa', extra: email);
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(result.message ?? "Echec de l'authentification"),
+      ),
+    );
   }
-
+}
   Future<void> _goBrandTarget() async {
     final loggedIn = await AuthService.isLoggedIn();
     if (!mounted) return;

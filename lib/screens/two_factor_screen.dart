@@ -69,26 +69,28 @@ class _TwoFactorScreenState extends State<TwoFactorScreen> {
 
   String get _code => _controllers.map((c) => c.text).join();
 
-  Future<void> _submit() async {
-    final code = _code;
-    if (code.length != _length || _loading) return;
-    setState(() => _loading = true);
-    final result = await AuthService.verifyTwoFactor(widget.email, code);
-    if (!mounted) return;
-    setState(() => _loading = false);
+ Future<void> _submit() async {
+  final code = _code;
+  if (code.length != _length || _loading) return;
+  setState(() => _loading = true);
+  final result = await AuthService.verifyTwoFactor(widget.email, code);
+  if (!mounted) return;
+  setState(() => _loading = false);
 
-    if (result.success) {
-      context.go('/home');
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.message ?? 'Code invalide')),
-      );
-      for (final c in _controllers) {
-        c.clear();
-      }
-      _focusNodes.first.requestFocus();
+  if (result.success) {
+    final isAdmin = await AuthService.isAdmin();
+    if (!mounted) return;
+    context.go(isAdmin ? '/admin' : '/home');
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(result.message ?? 'Code invalide')),
+    );
+    for (final c in _controllers) {
+      c.clear();
     }
+    _focusNodes.first.requestFocus();
   }
+}
 
   @override
   Widget build(BuildContext context) {

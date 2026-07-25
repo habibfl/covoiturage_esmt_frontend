@@ -318,6 +318,15 @@ class AuthService {
         await prefs.setString('phone', body['telephone']);
       }
 
+      final backendRole = body['role'];
+      if (backendRole is String) {
+        await prefs.setString('backendRole', backendRole);
+      }
+
+      if (backendRole == 'ROLE_ADMIN') {
+        return;
+      }
+
       final hasVehicle = await VehicleService.hasVehicle();
       await prefs.setString('role', hasVehicle ? 'driver' : 'passenger');
     } catch (_) {
@@ -407,6 +416,7 @@ class AuthService {
     await prefs.remove('email');
     await prefs.remove('phone');
     await prefs.remove('role');
+    await prefs.remove('backendRole');
     await prefs.remove('profilePhotoUrl');
     await prefs.remove('studentCardName');
   }
@@ -455,6 +465,12 @@ class AuthService {
   static Future<void> setRole(String role) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('role', role);
+  }
+
+  static Future<bool> isAdmin() async {
+    final prefs = await SharedPreferences.getInstance();
+    final backendRole = prefs.getString('backendRole') ?? '';
+    return backendRole == 'ROLE_ADMIN';
   }
 
   static Future<String> getProfilePhotoUrl() async {
