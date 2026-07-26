@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/colors.dart';
 import '../main.dart';
 import '../services/auth_service.dart';
+import '../services/error_utils.dart';
 import '../services/reservation_service.dart';
 import '../services/vehicle_service.dart';
 
@@ -101,12 +102,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       setState(() => _photoUrl = url);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Upload impossible pour le moment, photo affichee localement',
-          ),
-        ),
+      showErrorSnackBar(
+        context,
+        'Upload impossible pour le moment, photo affichee localement',
       );
     } finally {
       if (mounted) setState(() => _uploadingPhoto = false);
@@ -270,13 +268,13 @@ _SettingsGroup(
                 const SizedBox(height: 24),
                 InkWell(
                   onTap: _logout,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(16),
                   child: Container(
                     width: double.infinity,
                     height: 54,
                     decoration: BoxDecoration(
                       color: AppColors.statusRedSoft,
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                     alignment: Alignment.center,
                     child: Text(
@@ -312,10 +310,10 @@ class _CountBadge extends StatelessWidget {
       ),
       child: Text(
         '$count',
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w700,
-          color: Colors.white,
+          color: AppColors.onColor,
         ),
       ),
     );
@@ -367,10 +365,10 @@ class _ProfileAvatar extends StatelessWidget {
         alignment: Alignment.center,
         child: Text(
           initial,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 30,
             fontWeight: FontWeight.w700,
-            color: Colors.white,
+            color: AppColors.onColor,
           ),
         ),
       );
@@ -391,7 +389,7 @@ class _ProfileAvatar extends StatelessWidget {
                 color: Colors.black.withValues(alpha: 0.35),
                 shape: BoxShape.circle,
               ),
-              child: const CupertinoActivityIndicator(color: Colors.white),
+              child: CupertinoActivityIndicator(color: AppColors.onColor),
             ),
         ],
       ),

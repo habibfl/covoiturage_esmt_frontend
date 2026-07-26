@@ -112,7 +112,8 @@ class VehicleService {
       final decoded = jsonDecode(response.body);
       if (decoded is! List) return [];
       return decoded.whereType<Map<String, dynamic>>().toList();
-    } catch (_) {
+    } catch (e) {
+      logSilentError('VehicleService._fetchOwnedVehicles', e);
       return [];
     }
   }

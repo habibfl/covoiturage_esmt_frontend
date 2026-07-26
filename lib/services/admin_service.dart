@@ -11,8 +11,13 @@ import 'error_utils.dart';
 class AdminResult {
   final bool success;
   final String? message;
+  final bool isAuthError;
 
-  const AdminResult({required this.success, this.message});
+  const AdminResult({
+    required this.success,
+    this.message,
+    this.isAuthError = false,
+  });
 }
 
 class AdminService {
@@ -32,7 +37,8 @@ class AdminService {
       final decoded = jsonDecode(response.body);
       if (decoded is! List) return [];
       return decoded.cast<Map<String, dynamic>>();
-    } catch (_) {
+    } catch (e) {
+      logSilentError('AdminService.getAllUsers', e);
       return [];
     }
   }
@@ -56,7 +62,11 @@ class AdminService {
         return const AdminResult(success: true);
       }
       logNetworkError('AdminService.blockUser', response);
-      return AdminResult(success: false, message: extractErrorMessage(response));
+      return AdminResult(
+        success: false,
+        message: extractErrorMessage(response),
+        isAuthError: response.statusCode == 401,
+      );
     } on SocketException {
       return const AdminResult(
         success: false,
@@ -91,7 +101,11 @@ class AdminService {
         return const AdminResult(success: true);
       }
       logNetworkError('AdminService.unblockUser', response);
-      return AdminResult(success: false, message: extractErrorMessage(response));
+      return AdminResult(
+        success: false,
+        message: extractErrorMessage(response),
+        isAuthError: response.statusCode == 401,
+      );
     } on SocketException {
       return const AdminResult(
         success: false,

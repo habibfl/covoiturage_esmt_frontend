@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../constants/colors.dart';
+import '../services/avis_service.dart';
 import '../services/error_utils.dart';
 import '../services/reservation_service.dart';
 import '../widgets/address_timeline_tile.dart';
@@ -20,14 +21,27 @@ class BookingScreen extends StatefulWidget {
 
 class _BookingScreenState extends State<BookingScreen> {
   bool _loading = false;
+  double _driverRating = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRating();
+  }
+
+  Future<void> _loadRating() async {
+    final conducteurId = widget.trip?['conducteurId'];
+    if (conducteurId == null) return;
+    final rating = await AvisService.getNoteMoyenne(conducteurId.toString());
+    if (!mounted) return;
+    setState(() => _driverRating = rating);
+  }
 
   Future<void> _reserve() async {
     final trip = widget.trip;
     final tripId = trip?['id']?.toString();
     if (tripId == null || tripId.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Trajet invalide, reessayez.')),
-      );
+      showErrorSnackBar(context, 'Trajet invalide, reessayez.');
       return;
     }
     setState(() => _loading = true);
@@ -98,7 +112,6 @@ class _BookingScreenState extends State<BookingScreen> {
     final arrival = trip['arrival']?.toString() ?? 'Arrivee non renseignee';
     final driverName = trip['driverName']?.toString();
     final vehicle = trip['vehicle']?.toString() ?? '';
-    final ratingValue = trip['rating'];
     final time = trip['time']?.toString();
     final seats = trip['seats'];
     final price = trip['price']?.toString();
@@ -124,7 +137,7 @@ class _BookingScreenState extends State<BookingScreen> {
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 112),
         children: [
           Container(
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: AppColors.surface,
               borderRadius: BorderRadius.circular(18),
@@ -154,12 +167,12 @@ class _BookingScreenState extends State<BookingScreen> {
             DriverProfileCard(
               name: driverName,
               vehicle: vehicle,
-              rating: ratingValue is num ? ratingValue.toDouble() : 0,
+              rating: _driverRating,
               framed: true,
             )
           else
             Container(
-              padding: const EdgeInsets.all(18),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: AppColors.surface,
                 borderRadius: BorderRadius.circular(18),

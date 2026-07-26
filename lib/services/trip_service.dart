@@ -64,7 +64,8 @@ class TripService {
         results.add(await _mapTrajet(item));
       }
       return results;
-    } catch (_) {
+    } catch (e) {
+      logSilentError('TripService.getTrajets', e);
       return [];
     }
   }
@@ -101,6 +102,7 @@ class TripService {
       }
       return TripsResult(trips: results, success: true);
     } catch (e) {
+      logSilentError('TripService.getTrajetsWithStatus', e);
       return const TripsResult(
         trips: [],
         success: false,
@@ -122,7 +124,8 @@ class TripService {
       final decoded = jsonDecode(response.body);
       if (decoded is! Map<String, dynamic>) return null;
       return _mapTrajet(decoded);
-    } catch (_) {
+    } catch (e) {
+      logSilentError('TripService.getTrajetById', e);
       return null;
     }
   }
@@ -154,7 +157,8 @@ class TripService {
           'statut': json['statutTrajet'],
         };
       }).toList();
-    } catch (_) {
+    } catch (e) {
+      logSilentError('TripService.getTrajetsByConducteur', e);
       return [];
     }
   }
@@ -211,6 +215,7 @@ class TripService {
         isAuthError: response.statusCode == 401,
       );
     } catch (e) {
+      logSilentError('TripService.updateTripStatus', e);
       return TripPublishResult(success: false, message: 'Erreur: $e');
     }
   }
@@ -262,7 +267,8 @@ class TripService {
       final modele = first['modele'] ?? '';
       final label = ('$marque $modele').trim();
       return label.isEmpty ? null : label;
-    } catch (_) {
+    } catch (e) {
+      logSilentError('TripService._fetchVehicleLabel', e);
       return null;
     }
   }
@@ -290,7 +296,8 @@ class TripService {
         logNetworkError('TripService.reserverPlace', response);
       }
       return response.statusCode == 200 || response.statusCode == 201;
-    } catch (_) {
+    } catch (e) {
+      logSilentError('TripService.reserverPlace', e);
       return false;
     }
   }
@@ -343,6 +350,7 @@ class TripService {
         isAuthError: response.statusCode == 401,
       );
     } catch (e) {
+      logSilentError('TripService.publierTrajet', e);
       return TripPublishResult(
         success: false,
         message: 'Une erreur est survenue: $e',

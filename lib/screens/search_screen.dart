@@ -3,9 +3,20 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../constants/colors.dart';
+import '../services/error_utils.dart';
 import '../services/trip_service.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/trip_card.dart';
+
+String _normalize(String input) {
+  const accents = 'àáâãäåèéêëìíîïòóôõöùúûüçñ';
+  const plain = 'aaaaaaeeeeiiiiooooouuuucn';
+  var result = input.toLowerCase();
+  for (var i = 0; i < accents.length; i++) {
+    result = result.replaceAll(accents[i], plain[i]);
+  }
+  return result;
+}
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -17,7 +28,9 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   final _queryController = TextEditingController();
   final _focusNode = FocusNode();
-  late Future<List<Map<String, dynamic>>> _resultsFuture;
+  bool _loading = true;
+  List<Map<String, dynamic>> _allTrips = [];
+  String _query = '';
   bool _focused = false;
 
   final List<String> _filters = const [
@@ -31,32 +44,55 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void initState() {
     super.initState();
-    _resultsFuture = TripService.getTrajets();
+    _loadTrips();
+    _queryController.addListener(_onQueryChanged);
     _focusNode.addListener(() {
       setState(() => _focused = _focusNode.hasFocus);
     });
   }
 
+  Future<void> _loadTrips() async {
+    setState(() => _loading = true);
+    final result = await TripService.getTrajetsWithStatus();
+    if (!mounted) return;
+    setState(() {
+      _allTrips = result.trips;
+      _loading = false;
+    });
+    if (!result.success) {
+      showErrorSnackBar(
+        context,
+        result.errorMessage ?? 'Impossible de charger les trajets.',
+      );
+    }
+  }
+
+  void _onQueryChanged() {
+    setState(() => _query = _queryController.text.trim());
+  }
+
+  List<Map<String, dynamic>> get _filteredTrips {
+    if (_query.isEmpty) return _allTrips;
+    final needle = _normalize(_query);
+    return _allTrips.where((trip) {
+      final departure = _normalize(trip['departure']?.toString() ?? '');
+      final arrival = _normalize(trip['arrival']?.toString() ?? '');
+      return departure.contains(needle) || arrival.contains(needle);
+    }).toList();
+  }
+
   @override
   void dispose() {
+    _queryController.removeListener(_onQueryChanged);
     _queryController.dispose();
     _focusNode.dispose();
     super.dispose();
-  }
-
-  void _search() {
-    setState(() {
-      _resultsFuture = TripService.getTrajets(
-        depart: _queryController.text.trim(),
-      );
-    });
   }
 
   void _clear() {
     _queryController.clear();
     _focusNode.unfocus();
     setState(() => _selectedFilter = 0);
-    _search();
   }
 
   @override
@@ -103,7 +139,7 @@ class _SearchScreenState extends State<SearchScreen> {
                           child: TextField(
                             controller: _queryController,
                             focusNode: _focusNode,
-                            onSubmitted: (_) => _search(),
+                            onSubmitted: (_) => _focusNode.unfocus(),
                             style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(color: AppColors.textPrimary),
                             decoration: InputDecoration(
@@ -140,10 +176,7 @@ class _SearchScreenState extends State<SearchScreen> {
               itemBuilder: (context, index) {
                 final selected = index == _selectedFilter;
                 return GestureDetector(
-                  onTap: () {
-                    setState(() => _selectedFilter = index);
-                    _search();
-                  },
+                  onTap: () => setState(() => _selectedFilter = index),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     decoration: BoxDecoration(
@@ -156,7 +189,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             fontWeight: FontWeight.w600,
                             color: selected
-                                ? Colors.white
+                                ? AppColors.onColor
                                 : AppColors.textSecondary,
                           ),
                     ),
@@ -167,59 +200,59 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
           const SizedBox(height: 16),
           Expanded(
-            child: FutureBuilder<List<Map<String, dynamic>>>(
-              future: _resultsFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(
+            child: _loading
+                ? Center(
                     child: CircularProgressIndicator(color: AppColors.primary),
-                  );
-                }
-                final trips = snapshot.data ?? [];
-                if (trips.isEmpty) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(32),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            CupertinoIcons.search,
-                            size: 40,
-                            color: AppColors.textSecondary,
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'Aucun trajet trouve',
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                          const SizedBox(height: 20),
-                          CustomButton(
-                            label: 'Modifier la recherche',
-                            secondary: true,
-                            onPressed: _clear,
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-                return ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                  itemCount: trips.length,
-                  itemBuilder: (context, index) {
-                    return TripCard(
-                      trip: trips[index],
-                      onReserve: () =>
-                          context.go('/booking', extra: trips[index]),
-                    );
-                  },
-                );
-              },
-            ),
+                  )
+                : _buildResults(context),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildResults(BuildContext context) {
+    final trips = _filteredTrips;
+    if (trips.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                CupertinoIcons.search,
+                size: 40,
+                color: AppColors.textSecondary,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                _query.isEmpty
+                    ? 'Aucun trajet trouve'
+                    : "Aucun trajet trouve pour '$_query'",
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 20),
+              CustomButton(
+                label: 'Modifier la recherche',
+                secondary: true,
+                onPressed: _clear,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      itemCount: trips.length,
+      itemBuilder: (context, index) {
+        return TripCard(
+          trip: trips[index],
+          onReserve: () => context.go('/booking', extra: trips[index]),
+        );
+      },
     );
   }
 }

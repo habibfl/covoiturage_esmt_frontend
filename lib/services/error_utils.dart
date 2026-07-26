@@ -23,6 +23,10 @@ void logNetworkError(String context, http.Response response) {
   debugPrint('[$context] HTTP ${response.statusCode}: ${response.body}');
 }
 
+void logSilentError(String context, Object error) {
+  debugPrint('[$context] $error');
+}
+
 void showErrorSnackBar(
   BuildContext context,
   String message, {

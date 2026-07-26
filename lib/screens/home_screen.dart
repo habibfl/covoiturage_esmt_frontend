@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../constants/colors.dart';
 import '../services/auth_service.dart';
+import '../services/error_utils.dart';
 import '../services/reservation_service.dart';
 import '../services/trip_service.dart';
 import '../widgets/custom_button.dart';
@@ -23,7 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _role = 'passenger';
   bool _roleLoaded = false;
   int _notificationCount = 0;
-  late Future<List<Map<String, dynamic>>> _tripsFuture;
+  late Future<TripsResult> _tripsFuture;
 
   final _from = TextEditingController();
   final _to = TextEditingController();
@@ -35,8 +36,18 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _tripsFuture = TripService.getTrajets();
+    _tripsFuture = _fetchTrips();
     _loadUser();
+  }
+
+  Future<TripsResult> _fetchTrips() async {
+    final result = await TripService.getTrajetsWithStatus();
+    if (!mounted || result.success) return result;
+    showErrorSnackBar(
+      context,
+      result.errorMessage ?? 'Impossible de charger les trajets.',
+    );
+    return result;
   }
 
   @override
@@ -382,7 +393,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  FutureBuilder<List<Map<String, dynamic>>>(
+                  FutureBuilder<TripsResult>(
                     future: _tripsFuture,
                     builder: (context, snapshot) {
                       if (snapshot.connectionState ==
@@ -396,7 +407,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         );
                       }
-                      final trips = snapshot.data ?? [];
+                      final trips = snapshot.data?.trips ?? [];
                       if (trips.isEmpty) return const _EmptyTrips();
                       return Column(
                         children: trips
@@ -540,10 +551,10 @@ class _Header extends StatelessWidget {
                       child: Text(
                         '$notificationCount',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.w700,
-                          color: Colors.white,
+                          color: AppColors.onColor,
                         ),
                       ),
                     ),
@@ -565,10 +576,10 @@ class _Header extends StatelessWidget {
               alignment: Alignment.center,
               child: Text(
                 initial,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
-                  color: Colors.white,
+                  color: AppColors.onColor,
                 ),
               ),
             ),
@@ -652,7 +663,7 @@ class _SegmentButton extends StatelessWidget {
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w700,
-                color: selected ? Colors.white : AppColors.textSecondary,
+                color: selected ? AppColors.onColor : AppColors.textSecondary,
               ),
         ),
       ),
@@ -723,10 +734,10 @@ class _SearchCard extends StatelessWidget {
                       shape: BoxShape.circle,
                       border: Border.all(color: AppColors.surface, width: 3),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       CupertinoIcons.arrow_up_arrow_down,
                       size: 16,
-                      color: Colors.white,
+                      color: AppColors.onColor,
                     ),
                   ),
                 ),

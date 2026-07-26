@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:geolocator/geolocator.dart';
 
+import 'error_utils.dart';
 import 'firebase_service.dart';
 
 class LocationTrackingService {
@@ -30,13 +31,19 @@ class LocationTrackingService {
 
     _positionSubscription = Geolocator.getPositionStream(
       locationSettings: settings,
-    ).listen((Position position) {
-      FirebaseService.updateLocation(
-        tripId,
-        position.latitude,
-        position.longitude,
-      );
-    });
+    ).listen(
+      (Position position) {
+        FirebaseService.updateLocation(
+          tripId,
+          position.latitude,
+          position.longitude,
+        );
+      },
+      onError: (Object error) {
+        logSilentError('LocationTrackingService.startTracking', error);
+        stopTracking();
+      },
+    );
     _currentTripId = tripId;
     return true;
   }

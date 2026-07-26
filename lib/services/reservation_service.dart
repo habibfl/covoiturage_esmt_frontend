@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../constants/api_constants.dart';
 import 'auth_service.dart';
@@ -163,8 +163,31 @@ class ReservationService {
         return idB.compareTo(idA);
       });
       return relevant.first;
-    } catch (_) {
+    } catch (e) {
+      logSilentError('ReservationService.getActiveReservation', e);
       return null;
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> getMyReservations() async {
+    final token = await AuthService.getToken();
+    if (token == null || token.isEmpty) return [];
+    try {
+      final uri = Uri.parse('${ApiConstants.baseUrl}/reservations');
+      final response = await http.get(
+        uri,
+        headers: {'Authorization': 'Bearer $token'},
+      ).timeout(const Duration(seconds: 12));
+      if (response.statusCode != 200) {
+        logNetworkError('ReservationService.getMyReservations', response);
+        return [];
+      }
+      final decoded = jsonDecode(response.body);
+      if (decoded is! List) return [];
+      return decoded.cast<Map<String, dynamic>>();
+    } catch (e) {
+      logSilentError('ReservationService.getMyReservations', e);
+      return [];
     }
   }
 
@@ -188,7 +211,8 @@ class ReservationService {
       final decoded = jsonDecode(response.body);
       if (decoded is! List) return [];
       return decoded.whereType<Map<String, dynamic>>().toList();
-    } catch (_) {
+    } catch (e) {
+      logSilentError('ReservationService.getReservationsForTrip', e);
       return [];
     }
   }

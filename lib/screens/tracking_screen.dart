@@ -8,6 +8,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../constants/colors.dart';
 import '../services/auth_service.dart';
+import '../services/avis_service.dart';
 import '../services/error_utils.dart';
 import '../services/firebase_service.dart';
 import '../services/location_tracking_service.dart';
@@ -35,6 +36,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
   String? _tripId;
   String? _reservationId;
   String? _status;
+  double _driverRating = 0;
 
   GoogleMapController? _mapController;
   StreamSubscription<DatabaseEvent>? _locationSub;
@@ -113,6 +115,13 @@ class _TrackingScreenState extends State<TrackingScreen> {
       }
     }
 
+    double driverRating = 0;
+    if (!isDriver && trip != null && trip['conducteurId'] != null) {
+      driverRating =
+          await AvisService.getNoteMoyenne(trip['conducteurId'].toString());
+      if (!mounted) return;
+    }
+
     if (!mounted) return;
     setState(() {
       _isDriver = isDriver;
@@ -120,6 +129,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
       _tripId = tripId;
       _reservationId = reservationId;
       _status = status;
+      _driverRating = driverRating;
       _loading = false;
     });
 
@@ -452,7 +462,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
                       DriverProfileCard(
                         name: driverName,
                         vehicle: vehicle,
-                        rating: 0,
+                        rating: _driverRating,
                         compact: true,
                       )
                     else
@@ -626,8 +636,8 @@ class _StatusChip extends StatelessWidget {
       ),
       child: Text(
         text,
-        style: const TextStyle(
-          color: Colors.white,
+        style: TextStyle(
+          color: AppColors.onColor,
           fontSize: 11,
           fontWeight: FontWeight.w700,
         ),

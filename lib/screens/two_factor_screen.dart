@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../constants/colors.dart';
 import '../services/auth_service.dart';
+import '../services/error_utils.dart';
 import '../widgets/custom_button.dart';
 
 class TwoFactorScreen extends StatefulWidget {
@@ -82,8 +83,10 @@ class _TwoFactorScreenState extends State<TwoFactorScreen> {
     if (!mounted) return;
     context.go(isAdmin ? '/admin' : '/home');
   } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(result.message ?? 'Code invalide')),
+    showErrorSnackBar(
+      context,
+      result.message ?? 'Code invalide',
+      isAuthError: result.isAuthError,
     );
     for (final c in _controllers) {
       c.clear();

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../constants/colors.dart';
 import '../services/auth_service.dart';
+import '../services/error_utils.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/custom_input.dart';
 
@@ -50,8 +51,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     } else if (result.twoFactorRequired) {
       context.go('/verify-2fa', extra: email);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.message ?? "Echec de l'inscription")),
+      showErrorSnackBar(
+        context,
+        result.message ?? "Echec de l'inscription",
+        isAuthError: result.isAuthError,
       );
     }
   }

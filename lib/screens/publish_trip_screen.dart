@@ -83,7 +83,8 @@ class _PublishTripScreenState extends State<PublishTripScreen> {
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
-    if (d != null) setState(() => _date = d);
+    if (!mounted || d == null) return;
+    setState(() => _date = d);
   }
 
   Future<void> _pickTime() async {
@@ -91,7 +92,8 @@ class _PublishTripScreenState extends State<PublishTripScreen> {
       context: context,
       initialTime: TimeOfDay.now(),
     );
-    if (t != null) setState(() => _time = t);
+    if (!mounted || t == null) return;
+    setState(() => _time = t);
   }
 
   @override
@@ -120,7 +122,7 @@ class _PublishTripScreenState extends State<PublishTripScreen> {
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: AppColors.surface,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(18),
               boxShadow: [AppShadows.soft],
             ),
             child: Column(

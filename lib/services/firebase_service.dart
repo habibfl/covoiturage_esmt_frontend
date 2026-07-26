@@ -1,5 +1,7 @@
 import 'package:firebase_database/firebase_database.dart';
 
+import 'error_utils.dart';
+
 class FirebaseService {
   static DatabaseReference _locationRef(String tripId) {
     return FirebaseDatabase.instance.ref('trips/$tripId/location');
@@ -16,8 +18,9 @@ class FirebaseService {
         'lng': lng,
         'timestamp': ServerValue.timestamp,
       });
-    } catch (_) {
+    } catch (e) {
       // Echec silencieux : pas d'impact bloquant si Firebase est indisponible.
+      logSilentError('FirebaseService.updateLocation', e);
     }
   }
 
@@ -29,6 +32,8 @@ class FirebaseService {
     try {
       final ref = FirebaseDatabase.instance.ref('trips/$tripId/location');
       await ref.remove();
-    } catch (_) {}
+    } catch (e) {
+      logSilentError('FirebaseService.clearLocation', e);
+    }
   }
 }

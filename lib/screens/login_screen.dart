@@ -4,6 +4,7 @@ import 'package:flutter/gestures.dart';
 
 import '../constants/colors.dart';
 import '../services/auth_service.dart';
+import '../services/error_utils.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/custom_input.dart';
 
@@ -39,10 +40,10 @@ class _LoginScreenState extends State<LoginScreen> {
   } else if (result.twoFactorRequired) {
     context.go('/verify-2fa', extra: email);
   } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(result.message ?? "Echec de l'authentification"),
-      ),
+    showErrorSnackBar(
+      context,
+      result.message ?? "Echec de l'authentification",
+      isAuthError: result.isAuthError,
     );
   }
 }
