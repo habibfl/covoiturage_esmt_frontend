@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/gestures.dart';
@@ -114,7 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       CustomInput(
                         label: 'Email institutionnel',
                         hint: 'prenom.nom@esmt.sn',
-                        icon: Icons.mail_outline_rounded,
+                        icon: CupertinoIcons.mail,
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
                         validator: (v) {
@@ -129,14 +130,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       CustomInput(
                         label: 'Mot de passe',
                         hint: 'Votre mot de passe',
-                        icon: Icons.lock_outline_rounded,
+                        icon: CupertinoIcons.lock,
                         controller: _passwordController,
                         obscureText: _obscure,
                         suffix: IconButton(
                           icon: Icon(
                             _obscure
-                                ? Icons.visibility_off_outlined
-                                : Icons.visibility_outlined,
+                                ? CupertinoIcons.eye_slash
+                                : CupertinoIcons.eye,
                             color: AppColors.textSecondary,
                           ),
                           onPressed: () =>

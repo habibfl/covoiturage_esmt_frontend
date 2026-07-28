@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -108,7 +109,7 @@ class _TwoFactorScreenState extends State<TwoFactorScreen> {
           padding: const EdgeInsets.only(left: 16),
           child: IconButton(
             onPressed: () => context.go('/login'),
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+            icon: const Icon(CupertinoIcons.back, size: 18),
             style: IconButton.styleFrom(
               backgroundColor: AppColors.surface,
               shape: const CircleBorder(),
@@ -158,15 +159,15 @@ class _TwoFactorScreenState extends State<TwoFactorScreen> {
                           fillColor: AppColors.inputFill,
                           contentPadding: EdgeInsets.zero,
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(16),
                             borderSide: BorderSide.none,
                           ),
                           enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(16),
                             borderSide: BorderSide.none,
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(16),
                             borderSide: BorderSide(
                               color: AppColors.primary,
                               width: 2,

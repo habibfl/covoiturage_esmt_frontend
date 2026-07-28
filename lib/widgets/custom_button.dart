@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../constants/colors.dart';
 
-class CustomButton extends StatelessWidget {
+class CustomButton extends StatefulWidget {
   final String label;
   final VoidCallback? onPressed;
   final bool loading;
@@ -22,52 +22,77 @@ class CustomButton extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final disabled = onPressed == null || loading;
+  State<CustomButton> createState() => _CustomButtonState();
+}
 
-    final child = loading
-        ? const SizedBox(
+class _CustomButtonState extends State<CustomButton> {
+  bool _pressed = false;
+
+  void _setPressed(bool value) {
+    if (_pressed == value) return;
+    setState(() => _pressed = value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final disabled = widget.onPressed == null || widget.loading;
+
+    final child = widget.loading
+        ? SizedBox(
             width: 22,
             height: 22,
-            child: CupertinoActivityIndicator(color: Colors.white),
+            child: CupertinoActivityIndicator(color: AppColors.onColor),
           )
         : Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (icon != null) ...[
-                Icon(icon, size: 18),
+              if (widget.icon != null) ...[
+                Icon(widget.icon, size: 18),
                 const SizedBox(width: 8),
               ],
-              Text(label),
+              Text(widget.label),
             ],
           );
 
-    return Opacity(
-      opacity: disabled && !loading ? 0.6 : 1,
-      child: SizedBox(
-        width: double.infinity,
-        height: 54,
-        child: secondary
-            ? OutlinedButton(
-                onPressed: disabled ? null : onPressed,
-                style: backgroundColor != null
-                    ? OutlinedButton.styleFrom(
-                        foregroundColor: backgroundColor,
-                        side: BorderSide(color: backgroundColor!, width: 1.5),
-                      )
-                    : null,
-                child: child,
-              )
-            : ElevatedButton(
-                onPressed: disabled ? null : onPressed,
-                style: backgroundColor != null
-                    ? ElevatedButton.styleFrom(
-                        backgroundColor: backgroundColor,
-                        foregroundColor: Colors.white,
-                      )
-                    : null,
-                child: child,
-              ),
+    return Listener(
+      onPointerDown: disabled ? null : (_) => _setPressed(true),
+      onPointerUp: disabled ? null : (_) => _setPressed(false),
+      onPointerCancel: disabled ? null : (_) => _setPressed(false),
+      child: AnimatedScale(
+        scale: _pressed ? 0.97 : 1.0,
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOut,
+        child: Opacity(
+          opacity: disabled && !widget.loading ? 0.6 : 1,
+          child: SizedBox(
+            width: double.infinity,
+            height: 54,
+            child: widget.secondary
+                ? OutlinedButton(
+                    onPressed: disabled ? null : widget.onPressed,
+                    style: widget.backgroundColor != null
+                        ? OutlinedButton.styleFrom(
+                            foregroundColor: widget.backgroundColor,
+                            side: BorderSide(
+                              color: widget.backgroundColor!,
+                              width: 1.5,
+                            ),
+                          )
+                        : null,
+                    child: child,
+                  )
+                : ElevatedButton(
+                    onPressed: disabled ? null : widget.onPressed,
+                    style: widget.backgroundColor != null
+                        ? ElevatedButton.styleFrom(
+                            backgroundColor: widget.backgroundColor,
+                            foregroundColor: AppColors.onColor,
+                          )
+                        : null,
+                    child: child,
+                  ),
+          ),
+        ),
       ),
     );
   }

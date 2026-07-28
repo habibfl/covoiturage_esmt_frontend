@@ -9,6 +9,14 @@ import '../services/error_utils.dart';
 import '../services/reservation_service.dart';
 import '../services/trip_service.dart';
 import '../widgets/address_timeline_tile.dart';
+import '../widgets/fade_slide_in.dart';
+
+class _StatusVisual {
+  final String label;
+  final Color color;
+
+  const _StatusVisual(this.label, this.color);
+}
 
 class TripHistoryScreen extends StatefulWidget {
   const TripHistoryScreen({super.key});
@@ -32,6 +40,18 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> {
     setState(() => _loading = true);
 
     final role = await AuthService.getRole();
+    final items = role == 'driver'
+        ? await _loadDriverHistory()
+        : await _loadPassengerHistory();
+
+    if (!mounted) return;
+    setState(() {
+      _items = items;
+      _loading = false;
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> _loadPassengerHistory() async {
     final reservations = await ReservationService.getMyReservations();
 
     final items = <Map<String, dynamic>>[];
@@ -44,9 +64,7 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> {
       if (trip == null) continue;
 
       final statutReservation = res['statutReservation']?.toString() ?? '';
-      final conducteurId = trip['conducteurId']?.toString();
-      final isPassenger = role != 'driver';
-      final cibleId = isPassenger ? conducteurId : null;
+      final cibleId = trip['conducteurId']?.toString();
 
       final isPastTrip = _isDateInPast(trip['dateDepart']?.toString()) ||
           trip['statut'] == 'TERMINE';
@@ -59,22 +77,90 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> {
         if (already) reviewable = false;
       }
 
+      final visual = _reservationStatusVisual(statutReservation);
+
       items.add({
         'reservationId': reservationId,
         'tripId': tripId,
         'departure': trip['departure'],
         'arrival': trip['arrival'],
-        'statutReservation': statutReservation,
+        'statusLabel': visual.label,
+        'statusColor': visual.color,
         'cibleId': cibleId,
         'reviewable': reviewable,
       });
     }
+    return items;
+  }
 
-    if (!mounted) return;
-    setState(() {
-      _items = items;
-      _loading = false;
-    });
+  Future<List<Map<String, dynamic>>> _loadDriverHistory() async {
+    final userId = await AuthService.getUserId();
+    if (userId == null) return [];
+
+    final trips = await TripService.getTrajetsByConducteur(userId);
+
+    final items = <Map<String, dynamic>>[];
+    for (final trip in trips) {
+      final tripId = trip['id']?.toString();
+      if (tripId == null) continue;
+
+      final reservations =
+          await ReservationService.getReservationsForTrip(tripId);
+      final confirmedCount = reservations
+          .where((r) => r['statutReservation'] == 'CONFIRMEE')
+          .length;
+
+      final visual = _tripStatusVisual(trip['statut']?.toString() ?? '');
+
+      items.add({
+        'reservationId': null,
+        'tripId': tripId,
+        'departure': trip['departure'],
+        'arrival': trip['arrival'],
+        'statusLabel': visual.label,
+        'statusColor': visual.color,
+        'cibleId': null,
+        'reviewable': false,
+        'reservationCount': confirmedCount,
+      });
+    }
+    return items;
+  }
+
+  _StatusVisual _reservationStatusVisual(String statut) {
+    switch (statut) {
+      case 'CONFIRMEE':
+        return _StatusVisual('Confirmee', AppColors.accentGreen);
+      case 'EN_ATTENTE':
+        return _StatusVisual('En attente', AppColors.statusOrange);
+      case 'REJETEE':
+        return _StatusVisual('Refusee', AppColors.statusRed);
+      case 'ANNULEE':
+        return _StatusVisual('Annulee', AppColors.textSecondary);
+      default:
+        return _StatusVisual(
+          statut.isEmpty ? 'Inconnu' : statut,
+          AppColors.textSecondary,
+        );
+    }
+  }
+
+  _StatusVisual _tripStatusVisual(String statut) {
+    switch (statut) {
+      case 'EN_COURS':
+        return _StatusVisual('En cours', AppColors.accentGreen);
+      case 'TERMINE':
+        return _StatusVisual('Termine', AppColors.textSecondary);
+      case 'ANNULE':
+        return _StatusVisual('Annule', AppColors.statusRed);
+      case 'PLANIFIE':
+        return _StatusVisual('Planifie', AppColors.statusOrange);
+      default:
+        return _StatusVisual(
+          statut.isEmpty ? 'Inconnu' : statut,
+          AppColors.textSecondary,
+        );
+    }
   }
 
   bool _isDateInPast(String? dateStr) {
@@ -141,7 +227,7 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> {
           padding: const EdgeInsets.only(left: 16),
           child: IconButton(
             onPressed: () => context.go('/profile'),
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+            icon: const Icon(CupertinoIcons.back, size: 18),
             style: IconButton.styleFrom(
               backgroundColor: AppColors.surface,
               shape: const CircleBorder(),
@@ -182,10 +268,13 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> {
                       final reservationId = item['reservationId']?.toString();
                       final submitting = reservationId != null &&
                           _submitting.contains(reservationId);
-                      return _HistoryCard(
-                        item: item,
-                        submitting: submitting,
-                        onReview: () => _openReview(item),
+                      return FadeSlideIn(
+                        index: index,
+                        child: _HistoryCard(
+                          item: item,
+                          submitting: submitting,
+                          onReview: () => _openReview(item),
+                        ),
                       );
                     },
                   ),
@@ -209,15 +298,17 @@ class _HistoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final departure = item['departure']?.toString() ?? 'Depart';
     final arrival = item['arrival']?.toString() ?? 'Arrivee';
-    final statutReservation = item['statutReservation']?.toString() ?? '';
+    final statusLabel = item['statusLabel']?.toString() ?? 'Inconnu';
+    final statusColor = item['statusColor'] as Color? ?? AppColors.textSecondary;
     final reviewable = item['reviewable'] == true;
+    final reservationCount = item['reservationCount'] as int?;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(22),
         boxShadow: [AppShadows.soft],
       ),
       child: Column(
@@ -231,7 +322,20 @@ class _HistoryCard extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              _StatutBadge(statut: statutReservation),
+              _StatutBadge(label: statusLabel, color: statusColor),
+              if (reservationCount != null) ...[
+                const SizedBox(width: 10),
+                Icon(
+                  CupertinoIcons.person_2,
+                  size: 14,
+                  color: AppColors.textSecondary,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '$reservationCount reservation(s)',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
               const Spacer(),
               if (reviewable)
                 SizedBox(
@@ -265,47 +369,31 @@ class _HistoryCard extends StatelessWidget {
 }
 
 class _StatutBadge extends StatelessWidget {
-  final String statut;
+  final String label;
+  final Color color;
 
-  const _StatutBadge({required this.statut});
+  const _StatutBadge({required this.label, required this.color});
 
   @override
   Widget build(BuildContext context) {
-    late Color color;
-    late String label;
-    switch (statut) {
-      case 'CONFIRMEE':
-        color = AppColors.accentGreen;
-        label = 'Confirmee';
-        break;
-      case 'EN_ATTENTE':
-        color = AppColors.statusOrange;
-        label = 'En attente';
-        break;
-      case 'REJETEE':
-        color = AppColors.statusRed;
-        label = 'Refusee';
-        break;
-      case 'ANNULEE':
-        color = AppColors.textSecondary;
-        label = 'Annulee';
-        break;
-      default:
-        color = AppColors.textSecondary;
-        label = statut.isEmpty ? 'Inconnu' : statut;
-    }
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOut,
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(10),
       ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: AppColors.onColor,
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 200),
+        child: Text(
+          label,
+          key: ValueKey(label),
+          style: TextStyle(
+            color: AppColors.onColor,
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
     );
@@ -333,7 +421,7 @@ class _ReviewDialogState extends State<_ReviewDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: AppColors.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       title: Text(
         'Laisser un avis',
         style: Theme.of(context).textTheme.titleMedium,
@@ -348,7 +436,7 @@ class _ReviewDialogState extends State<_ReviewDialog> {
               return IconButton(
                 onPressed: () => setState(() => _note = index + 1),
                 icon: Icon(
-                  filled ? Icons.star_rounded : Icons.star_border_rounded,
+                  filled ? CupertinoIcons.star_fill : CupertinoIcons.star,
                   color: AppColors.starYellow,
                   size: 32,
                 ),
@@ -367,7 +455,7 @@ class _ReviewDialogState extends State<_ReviewDialog> {
               filled: true,
               fillColor: AppColors.inputFill,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(16),
                 borderSide: BorderSide.none,
               ),
             ),

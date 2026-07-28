@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -59,7 +60,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           padding: const EdgeInsets.only(left: 16),
           child: IconButton(
             onPressed: () => context.go('/login'),
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+            icon: const Icon(CupertinoIcons.back, size: 18),
             style: IconButton.styleFrom(
               backgroundColor: AppColors.surface,
               shape: const CircleBorder(),
@@ -82,7 +83,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               CustomInput(
                 label: 'Email institutionnel',
                 hint: 'prenom.nom@esmt.sn',
-                icon: Icons.mail_outline_rounded,
+                icon: CupertinoIcons.mail,
                 controller: _email,
                 keyboardType: TextInputType.emailAddress,
                 validator: (v) {

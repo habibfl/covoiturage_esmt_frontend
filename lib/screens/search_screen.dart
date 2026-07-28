@@ -6,6 +6,7 @@ import '../constants/colors.dart';
 import '../services/error_utils.dart';
 import '../services/trip_service.dart';
 import '../widgets/custom_button.dart';
+import '../widgets/fade_slide_in.dart';
 import '../widgets/trip_card.dart';
 
 String _normalize(String input) {
@@ -106,7 +107,7 @@ class _SearchScreenState extends State<SearchScreen> {
           padding: const EdgeInsets.only(left: 16),
           child: IconButton(
             onPressed: () => context.go('/home'),
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+            icon: const Icon(CupertinoIcons.back, size: 18),
             style: IconButton.styleFrom(
               backgroundColor: AppColors.surface,
               shape: const CircleBorder(),
@@ -248,9 +249,12 @@ class _SearchScreenState extends State<SearchScreen> {
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
       itemCount: trips.length,
       itemBuilder: (context, index) {
-        return TripCard(
-          trip: trips[index],
-          onReserve: () => context.go('/booking', extra: trips[index]),
+        return FadeSlideIn(
+          index: index,
+          child: TripCard(
+            trip: trips[index],
+            onReserve: () => context.go('/booking', extra: trips[index]),
+          ),
         );
       },
     );

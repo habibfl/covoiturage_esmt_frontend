@@ -10,8 +10,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/colors.dart';
 import '../main.dart';
 import '../services/auth_service.dart';
+import '../services/avis_service.dart';
 import '../services/error_utils.dart';
 import '../services/reservation_service.dart';
+import '../services/trip_service.dart';
 import '../services/vehicle_service.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -30,6 +32,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _photoUrl = '';
   bool _hasVehicle = false;
   int _pendingRequests = 0;
+  int _tripsPublished = 0;
+  double _averageRating = 0;
   Uint8List? _pickedPhotoBytes;
   bool _uploadingPhoto = false;
 
@@ -57,10 +61,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _hasVehicle = hasVehicle;
     });
 
-    if (hasVehicle) {
+    final isDriver = role == 'driver' || hasVehicle;
+    if (isDriver) {
       final count = await ReservationService.countPendingForDriver();
       if (!mounted) return;
       setState(() => _pendingRequests = count);
+
+      final userId = await AuthService.getUserId();
+      if (!mounted) return;
+      if (userId != null) {
+        final trips = await TripService.getTrajetsByConducteur(userId);
+        final rating = await AvisService.getNoteMoyenne(userId.toString());
+        if (!mounted) return;
+        setState(() {
+          _tripsPublished = trips.length;
+          _averageRating = rating;
+        });
+      }
     }
   }
 
@@ -209,10 +226,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 if (isDriver) ...[
                   const SizedBox(height: 16),
-                  const _DriverStatsCard(
-                    tripsPublished: 0,
-                    averageRating: 0,
-                    seatsOffered: 0,
+                  _DriverStatsCard(
+                    tripsPublished: _tripsPublished,
+                    averageRating: _averageRating,
                   ),
                 ],
               ],
@@ -400,12 +416,10 @@ class _ProfileAvatar extends StatelessWidget {
 class _DriverStatsCard extends StatelessWidget {
   final int tripsPublished;
   final double averageRating;
-  final int seatsOffered;
 
   const _DriverStatsCard({
     required this.tripsPublished,
     required this.averageRating,
-    required this.seatsOffered,
   });
 
   @override
@@ -431,13 +445,6 @@ class _DriverStatsCard extends StatelessWidget {
             child: _StatCell(
               label: 'Note moyenne',
               value: averageRating.toStringAsFixed(1),
-            ),
-          ),
-          Container(width: 1, height: 32, color: AppColors.divider),
-          Expanded(
-            child: _StatCell(
-              label: 'Places offertes',
-              value: '$seatsOffered',
             ),
           ),
         ],

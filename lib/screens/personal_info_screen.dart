@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -81,7 +82,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
           padding: const EdgeInsets.only(left: 16),
           child: IconButton(
             onPressed: () => context.go('/profile'),
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+            icon: const Icon(CupertinoIcons.back, size: 18),
             style: IconButton.styleFrom(
               backgroundColor: AppColors.surface,
               shape: const CircleBorder(),
@@ -100,7 +101,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                   children: [
                     CustomInput(
                       label: 'Prenom',
-                      icon: Icons.badge_outlined,
+                      icon: CupertinoIcons.person_crop_circle,
                       controller: _firstName,
                       validator: (v) =>
                           (v == null || v.trim().isEmpty) ? 'Requis' : null,
@@ -108,7 +109,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                     const SizedBox(height: 16),
                     CustomInput(
                       label: 'Nom',
-                      icon: Icons.person_outline_rounded,
+                      icon: CupertinoIcons.person,
                       controller: _lastName,
                       validator: (v) =>
                           (v == null || v.trim().isEmpty) ? 'Requis' : null,
@@ -116,7 +117,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                     const SizedBox(height: 16),
                     CustomInput(
                       label: 'Telephone',
-                      icon: Icons.call_outlined,
+                      icon: CupertinoIcons.phone,
                       controller: _phone,
                       keyboardType: TextInputType.phone,
                       validator: (v) =>
@@ -138,12 +139,12 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                       ),
                       decoration: BoxDecoration(
                         color: AppColors.inputFill,
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(16),
                       ),
                       child: Row(
                         children: [
                           Icon(
-                            Icons.mail_outline_rounded,
+                            CupertinoIcons.mail,
                             size: 20,
                             color: AppColors.textSecondary,
                           ),

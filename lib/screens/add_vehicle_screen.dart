@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -101,7 +102,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
           padding: const EdgeInsets.only(left: 16),
           child: IconButton(
             onPressed: () => context.go('/profile'),
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+            icon: const Icon(CupertinoIcons.back, size: 18),
             style: IconButton.styleFrom(
               backgroundColor: AppColors.surface,
               shape: const CircleBorder(),
@@ -118,35 +119,35 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
             children: [
               CustomInput(
                 label: 'Marque',
-                icon: Icons.directions_car_outlined,
+                icon: CupertinoIcons.car_detailed,
                 controller: _marque,
                 validator: (v) => (v == null || v.isEmpty) ? 'Requis' : null,
               ),
               const SizedBox(height: 16),
               CustomInput(
                 label: 'Modele',
-                icon: Icons.time_to_leave_outlined,
+                icon: CupertinoIcons.tag,
                 controller: _modele,
                 validator: (v) => (v == null || v.isEmpty) ? 'Requis' : null,
               ),
               const SizedBox(height: 16),
               CustomInput(
                 label: 'Immatriculation',
-                icon: Icons.confirmation_number_outlined,
+                icon: CupertinoIcons.number,
                 controller: _immatriculation,
                 validator: (v) => (v == null || v.isEmpty) ? 'Requis' : null,
               ),
               const SizedBox(height: 16),
               CustomInput(
                 label: 'Couleur',
-                icon: Icons.palette_outlined,
+                icon: CupertinoIcons.paintbrush,
                 controller: _couleur,
                 validator: (v) => (v == null || v.isEmpty) ? 'Requis' : null,
               ),
               const SizedBox(height: 16),
               CustomInput(
                 label: 'Nombre de places totales',
-                icon: Icons.event_seat_outlined,
+                icon: CupertinoIcons.person_2,
                 controller: _places,
                 keyboardType: TextInputType.number,
                 validator: (v) {
@@ -193,7 +194,7 @@ class _ExistingVehicleView extends StatelessWidget {
           padding: const EdgeInsets.only(left: 16),
           child: IconButton(
             onPressed: () => context.go('/profile'),
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+            icon: const Icon(CupertinoIcons.back, size: 18),
             style: IconButton.styleFrom(
               backgroundColor: AppColors.surface,
               shape: const CircleBorder(),
@@ -207,25 +208,25 @@ class _ExistingVehicleView extends StatelessWidget {
           Container(
             decoration: BoxDecoration(
               color: AppColors.surface,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(22),
               boxShadow: [AppShadows.soft],
             ),
             child: Column(
               children: [
-                _InfoRow(icon: Icons.directions_car_outlined, label: 'Marque', value: marque),
+                _InfoRow(icon: CupertinoIcons.car_detailed, label: 'Marque', value: marque),
                 Divider(color: AppColors.divider, height: 1, indent: 60),
-                _InfoRow(icon: Icons.time_to_leave_outlined, label: 'Modele', value: modele),
+                _InfoRow(icon: CupertinoIcons.tag, label: 'Modele', value: modele),
                 Divider(color: AppColors.divider, height: 1, indent: 60),
                 _InfoRow(
-                  icon: Icons.confirmation_number_outlined,
+                  icon: CupertinoIcons.number,
                   label: 'Immatriculation',
                   value: matricule,
                 ),
                 Divider(color: AppColors.divider, height: 1, indent: 60),
-                _InfoRow(icon: Icons.palette_outlined, label: 'Couleur', value: couleur),
+                _InfoRow(icon: CupertinoIcons.paintbrush, label: 'Couleur', value: couleur),
                 Divider(color: AppColors.divider, height: 1, indent: 60),
                 _InfoRow(
-                  icon: Icons.event_seat_outlined,
+                  icon: CupertinoIcons.person_2,
                   label: 'Places',
                   value: nbPlaces,
                 ),

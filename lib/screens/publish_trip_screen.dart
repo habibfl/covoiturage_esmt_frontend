@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -107,7 +108,7 @@ class _PublishTripScreenState extends State<PublishTripScreen> {
           padding: const EdgeInsets.only(left: 16),
           child: IconButton(
             onPressed: () => context.go('/home'),
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+            icon: const Icon(CupertinoIcons.back, size: 18),
             style: IconButton.styleFrom(
               backgroundColor: AppColors.surface,
               shape: const CircleBorder(),
@@ -122,25 +123,25 @@ class _PublishTripScreenState extends State<PublishTripScreen> {
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: AppColors.surface,
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(22),
               boxShadow: [AppShadows.soft],
             ),
             child: Column(
               children: [
                 CustomInput(
                   label: 'Point de depart',
-                  icon: Icons.location_on_outlined,
+                  icon: CupertinoIcons.location,
                   controller: _from,
                 ),
                 const SizedBox(height: 16),
                 CustomInput(
                   label: 'Destination',
-                  icon: Icons.flag_outlined,
+                  icon: CupertinoIcons.flag,
                   controller: _to,
                 ),
                 const SizedBox(height: 16),
                 _PickerRow(
-                  icon: Icons.calendar_month_rounded,
+                  icon: CupertinoIcons.calendar,
                   label: _date == null
                       ? 'Choisir une date'
                       : '${_date!.day}/${_date!.month}/${_date!.year}',
@@ -148,7 +149,7 @@ class _PublishTripScreenState extends State<PublishTripScreen> {
                 ),
                 const SizedBox(height: 16),
                 _PickerRow(
-                  icon: Icons.schedule_rounded,
+                  icon: CupertinoIcons.time,
                   label: _time == null
                       ? 'Choisir une heure'
                       : _time!.format(context),
@@ -162,7 +163,7 @@ class _PublishTripScreenState extends State<PublishTripScreen> {
                 const SizedBox(height: 20),
                 CustomInput(
                   label: 'Prix optionnel',
-                  icon: Icons.payments_outlined,
+                  icon: CupertinoIcons.money_dollar,
                   controller: _price,
                   keyboardType: TextInputType.number,
                   hint: 'Montant en FCFA',
@@ -197,13 +198,13 @@ class _PickerRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
         height: 56,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppColors.border, width: 1.5),
         ),
         child: Row(
@@ -227,7 +228,7 @@ class _PickerRow extends StatelessWidget {
               ),
             ),
             Icon(
-              Icons.chevron_right_rounded,
+              CupertinoIcons.chevron_right,
               color: AppColors.textSecondary,
             ),
           ],

@@ -21,13 +21,13 @@ class TripCard extends StatelessWidget {
       onTap: onReserve,
       splashColor: AppColors.primary.withValues(alpha: 0.08),
       highlightColor: Colors.transparent,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(22),
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(22),
           boxShadow: [AppShadows.soft],
         ),
         child: Column(

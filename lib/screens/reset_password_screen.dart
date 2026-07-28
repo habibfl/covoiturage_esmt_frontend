@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -68,7 +69,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           padding: const EdgeInsets.only(left: 16),
           child: IconButton(
             onPressed: () => context.go('/login'),
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+            icon: const Icon(CupertinoIcons.back, size: 18),
             style: IconButton.styleFrom(
               backgroundColor: AppColors.surface,
               shape: const CircleBorder(),
@@ -85,7 +86,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             children: [
               CustomInput(
                 label: 'Token recu par email',
-                icon: Icons.vpn_key_outlined,
+                icon: CupertinoIcons.lock_shield,
                 controller: _token,
                 validator: (v) =>
                     (v == null || v.trim().isEmpty) ? 'Requis' : null,
@@ -93,7 +94,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               const SizedBox(height: 16),
               CustomInput(
                 label: 'Nouveau mot de passe',
-                icon: Icons.lock_outline_rounded,
+                icon: CupertinoIcons.lock,
                 controller: _password,
                 obscureText: true,
                 validator: (v) {
@@ -107,7 +108,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               const SizedBox(height: 16),
               CustomInput(
                 label: 'Confirmer le mot de passe',
-                icon: Icons.lock_outline_rounded,
+                icon: CupertinoIcons.lock,
                 controller: _confirm,
                 obscureText: true,
                 validator: (v) {

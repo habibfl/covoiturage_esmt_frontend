@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:file_picker/file_picker.dart';
@@ -93,7 +94,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           padding: const EdgeInsets.only(left: 16),
           child: IconButton(
             onPressed: () => context.go('/login'),
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+            icon: const Icon(CupertinoIcons.back, size: 18),
             style: IconButton.styleFrom(
               backgroundColor: AppColors.surface,
               fixedSize: const Size(40, 40),
@@ -117,7 +118,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       Expanded(
                         child: _RoleCard(
                           selected: _role == 'passenger',
-                          icon: Icons.person_outline_rounded,
+                          icon: CupertinoIcons.person,
                           label: 'Passager',
                           onTap: () => setState(() => _role = 'passenger'),
                         ),
@@ -126,7 +127,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       Expanded(
                         child: _RoleCard(
                           selected: _role == 'driver',
-                          icon: Icons.drive_eta_outlined,
+                          icon: CupertinoIcons.car_detailed,
                           label: 'Conducteur',
                           onTap: () => setState(() => _role = 'driver'),
                         ),
@@ -139,7 +140,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       Expanded(
                         child: CustomInput(
                           label: 'Prenom',
-                          icon: Icons.badge_outlined,
+                          icon: CupertinoIcons.person_crop_circle,
                           controller: _firstName,
                         ),
                       ),
@@ -147,7 +148,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       Expanded(
                         child: CustomInput(
                           label: 'Nom',
-                          icon: Icons.person_outline_rounded,
+                          icon: CupertinoIcons.person,
                           controller: _lastName,
                         ),
                       ),
@@ -156,7 +157,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(height: 16),
                   CustomInput(
                     label: 'Email institutionnel',
-                    icon: Icons.mail_outline_rounded,
+                    icon: CupertinoIcons.mail,
                     controller: _email,
                     keyboardType: TextInputType.emailAddress,
                     validator: (v) {
@@ -170,14 +171,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(height: 16),
                   CustomInput(
                     label: 'Telephone',
-                    icon: Icons.call_outlined,
+                    icon: CupertinoIcons.phone,
                     controller: _phone,
                     keyboardType: TextInputType.phone,
                   ),
                   const SizedBox(height: 16),
                   CustomInput(
                     label: 'Mot de passe',
-                    icon: Icons.lock_outline_rounded,
+                    icon: CupertinoIcons.lock,
                     controller: _password,
                     obscureText: true,
                     validator: (v) => (v == null || v.length < 6)
@@ -188,13 +189,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 16),
                     CustomInput(
                       label: 'Vehicule',
-                      icon: Icons.directions_car_outlined,
+                      icon: CupertinoIcons.car_detailed,
                       controller: _vehicle,
                     ),
                     const SizedBox(height: 16),
                     CustomInput(
                       label: 'Plaque',
-                      icon: Icons.confirmation_number_outlined,
+                      icon: CupertinoIcons.number,
                       controller: _plate,
                     ),
                   ],
@@ -208,14 +209,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         color: studentCardUploaded
                             ? AppColors.accentSoft
                             : AppColors.inputFill,
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(16),
                       ),
                       child: CustomPaint(
                         painter: DashedBorderPainter(
                           color: studentCardUploaded
                               ? AppColors.accent
                               : AppColors.textSecondary,
-                          radius: 14,
+                          radius: 16,
                         ),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 8),
@@ -223,8 +224,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             children: [
                               Icon(
                                 studentCardUploaded
-                                    ? Icons.check_circle_rounded
-                                    : Icons.upload_file_outlined,
+                                    ? CupertinoIcons.checkmark_circle_fill
+                                    : CupertinoIcons.cloud_upload,
                                 color: studentCardUploaded
                                     ? AppColors.accent
                                     : AppColors.textSecondary,
@@ -305,13 +306,13 @@ class _RoleCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(16),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 220),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: selected ? AppColors.primarySoft : AppColors.surface,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: selected ? AppColors.primary : AppColors.border,
             width: selected ? 1.5 : 1,

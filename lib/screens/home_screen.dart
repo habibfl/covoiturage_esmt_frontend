@@ -8,6 +8,7 @@ import '../services/error_utils.dart';
 import '../services/reservation_service.dart';
 import '../services/trip_service.dart';
 import '../widgets/custom_button.dart';
+import '../widgets/fade_slide_in.dart';
 import '../widgets/trip_card.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -176,7 +177,7 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (context) {
         if (items.isEmpty) {
@@ -411,11 +412,18 @@ class _HomeScreenState extends State<HomeScreen> {
                       if (trips.isEmpty) return const _EmptyTrips();
                       return Column(
                         children: trips
+                            .asMap()
+                            .entries
                             .map(
-                              (trip) => TripCard(
-                                trip: trip,
-                                onReserve: () =>
-                                    context.go('/booking', extra: trip),
+                              (entry) => FadeSlideIn(
+                                index: entry.key,
+                                child: TripCard(
+                                  trip: entry.value,
+                                  onReserve: () => context.go(
+                                    '/booking',
+                                    extra: entry.value,
+                                  ),
+                                ),
                               ),
                             )
                             .toList(),
@@ -599,12 +607,12 @@ class _BecomeDriverCta extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           color: AppColors.accentSoft,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
           children: [
@@ -700,7 +708,7 @@ class _SearchCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
             color: AppColors.surface,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(22),
             boxShadow: [AppShadows.soft],
           ),
           child: Stack(
@@ -751,7 +759,7 @@ class _SearchCard extends StatelessWidget {
             Expanded(
               child: InkWell(
                 onTap: onPickDate,
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(16),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 14,
@@ -759,7 +767,7 @@ class _SearchCard extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(16),
                     boxShadow: [AppShadows.soft],
                   ),
                   child: Row(
@@ -791,7 +799,7 @@ class _SearchCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 10),
                 decoration: BoxDecoration(
                   color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(16),
                   boxShadow: [AppShadows.soft],
                 ),
                 child: Row(
@@ -890,7 +898,7 @@ class _PublishShortcutCard extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(22),
         boxShadow: [AppShadows.soft],
       ),
       child: Column(
@@ -1002,7 +1010,7 @@ class _EmptyTrips extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(22),
         boxShadow: [AppShadows.soft],
       ),
       child: Column(

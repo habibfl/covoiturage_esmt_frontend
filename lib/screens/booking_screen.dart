@@ -77,7 +77,7 @@ class _BookingScreenState extends State<BookingScreen> {
             padding: const EdgeInsets.only(left: 16),
             child: IconButton(
               onPressed: () => context.go('/home'),
-              icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+              icon: const Icon(CupertinoIcons.back, size: 18),
               style: IconButton.styleFrom(
                 backgroundColor: AppColors.surface,
                 shape: const CircleBorder(),
@@ -125,7 +125,7 @@ class _BookingScreenState extends State<BookingScreen> {
           padding: const EdgeInsets.only(left: 16),
           child: IconButton(
             onPressed: () => context.go('/home'),
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+            icon: const Icon(CupertinoIcons.back, size: 18),
             style: IconButton.styleFrom(
               backgroundColor: AppColors.surface,
               shape: const CircleBorder(),
@@ -140,7 +140,7 @@ class _BookingScreenState extends State<BookingScreen> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: AppColors.surface,
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(22),
               boxShadow: [AppShadows.soft],
             ),
             child: AddressTimelineTile(departure: departure, arrival: arrival),
@@ -175,7 +175,7 @@ class _BookingScreenState extends State<BookingScreen> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: AppColors.surface,
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(22),
                 boxShadow: [AppShadows.soft],
               ),
               child: Text(
@@ -219,7 +219,7 @@ class _MetaGrid extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(22),
         boxShadow: [AppShadows.soft],
       ),
       child: Row(

@@ -9,6 +9,7 @@ import '../services/firebase_service.dart';
 import '../services/location_tracking_service.dart';
 import '../services/trip_service.dart';
 import '../widgets/custom_button.dart';
+import '../widgets/fade_slide_in.dart';
 
 class MyTripsScreen extends StatefulWidget {
   const MyTripsScreen({super.key});
@@ -132,7 +133,7 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
           padding: const EdgeInsets.only(left: 16),
           child: IconButton(
             onPressed: () => context.go('/profile'),
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+            icon: const Icon(CupertinoIcons.back, size: 18),
             style: IconButton.styleFrom(
               backgroundColor: AppColors.surface,
               shape: const CircleBorder(),
@@ -172,11 +173,14 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
                       final trip = _trips[index];
                       final tripId = trip['id']?.toString();
                       final busy = _busyTripId == tripId;
-                      return _TripCard(
-                        trip: trip,
-                        busy: busy,
-                        onStart: () => _start(trip),
-                        onFinish: () => _finish(trip),
+                      return FadeSlideIn(
+                        index: index,
+                        child: _TripCard(
+                          trip: trip,
+                          busy: busy,
+                          onStart: () => _start(trip),
+                          onFinish: () => _finish(trip),
+                        ),
                       );
                     },
                   ),
@@ -210,7 +214,7 @@ class _TripCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(22),
         boxShadow: [AppShadows.soft],
       ),
       child: Column(

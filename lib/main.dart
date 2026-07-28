@@ -145,7 +145,7 @@ class CovoiturageESMTApp extends StatelessWidget {
   );
 
   ThemeData _buildTheme() {
-    final baseTextTheme = GoogleFonts.plusJakartaSansTextTheme();
+    final baseTextTheme = GoogleFonts.interTextTheme();
     final brightness = AppColors.isDark ? Brightness.dark : Brightness.light;
 
     return ThemeData(
@@ -164,30 +164,33 @@ class CovoiturageESMTApp extends StatelessWidget {
         outline: AppColors.border,
       ),
       textTheme: baseTextTheme.copyWith(
-        titleLarge: GoogleFonts.plusJakartaSans(
-          fontSize: 24,
+        titleLarge: GoogleFonts.inter(
+          fontSize: 28,
           fontWeight: FontWeight.w700,
+          letterSpacing: -0.5,
           color: AppColors.textPrimary,
         ),
-        titleMedium: GoogleFonts.plusJakartaSans(
-          fontSize: 17,
+        titleMedium: GoogleFonts.inter(
+          fontSize: 18,
           fontWeight: FontWeight.w600,
+          letterSpacing: -0.2,
           color: AppColors.textPrimary,
         ),
-        bodyMedium: GoogleFonts.plusJakartaSans(
+        bodyMedium: GoogleFonts.inter(
           fontSize: 15,
           fontWeight: FontWeight.w400,
+          height: 1.4,
           color: AppColors.textPrimary,
         ),
-        bodySmall: GoogleFonts.plusJakartaSans(
+        bodySmall: GoogleFonts.inter(
           fontSize: 13,
-          fontWeight: FontWeight.w400,
+          fontWeight: FontWeight.w500,
           color: AppColors.textSecondary,
         ),
-        labelLarge: GoogleFonts.plusJakartaSans(
+        labelLarge: GoogleFonts.inter(
           fontSize: 15,
           fontWeight: FontWeight.w600,
-          color: Colors.white,
+          color: AppColors.onColor,
         ),
       ),
       appBarTheme: AppBarTheme(
@@ -196,9 +199,10 @@ class CovoiturageESMTApp extends StatelessWidget {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        titleTextStyle: GoogleFonts.plusJakartaSans(
+        titleTextStyle: GoogleFonts.inter(
           fontSize: 22,
           fontWeight: FontWeight.w700,
+          letterSpacing: -0.3,
           color: AppColors.textPrimary,
         ),
         iconTheme: IconThemeData(color: AppColors.textPrimary),
@@ -215,7 +219,7 @@ class CovoiturageESMTApp extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(28),
           ),
-          textStyle: GoogleFonts.plusJakartaSans(
+          textStyle: GoogleFonts.inter(
             fontSize: 15,
             fontWeight: FontWeight.w600,
           ),
@@ -229,7 +233,7 @@ class CovoiturageESMTApp extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(28),
           ),
-          textStyle: GoogleFonts.plusJakartaSans(
+          textStyle: GoogleFonts.inter(
             fontSize: 15,
             fontWeight: FontWeight.w600,
           ),
@@ -238,7 +242,7 @@ class CovoiturageESMTApp extends StatelessWidget {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: AppColors.primary,
-          textStyle: GoogleFonts.plusJakartaSans(
+          textStyle: GoogleFonts.inter(
             fontSize: 13,
             fontWeight: FontWeight.w600,
           ),
@@ -252,26 +256,26 @@ class CovoiturageESMTApp extends StatelessWidget {
           vertical: 16,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(color: AppColors.primary, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(color: AppColors.statusRed, width: 1.5),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(color: AppColors.statusRed, width: 1.5),
         ),
-        hintStyle: GoogleFonts.plusJakartaSans(
+        hintStyle: GoogleFonts.inter(
           fontSize: 14,
           fontWeight: FontWeight.w400,
           color: AppColors.textSecondary,
@@ -282,7 +286,7 @@ class CovoiturageESMTApp extends StatelessWidget {
         elevation: 0,
         margin: EdgeInsets.zero,
         surfaceTintColor: AppColors.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: AppColors.surface,
@@ -290,18 +294,18 @@ class CovoiturageESMTApp extends StatelessWidget {
         type: BottomNavigationBarType.fixed,
         selectedItemColor: AppColors.primary,
         unselectedItemColor: AppColors.textSecondary,
-        selectedLabelStyle: GoogleFonts.plusJakartaSans(
+        selectedLabelStyle: GoogleFonts.inter(
           fontSize: 11,
           fontWeight: FontWeight.w700,
         ),
-        unselectedLabelStyle: GoogleFonts.plusJakartaSans(
+        unselectedLabelStyle: GoogleFonts.inter(
           fontSize: 11,
           fontWeight: FontWeight.w400,
         ),
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: AppColors.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       ),
       dividerTheme: DividerThemeData(
         color: AppColors.divider,

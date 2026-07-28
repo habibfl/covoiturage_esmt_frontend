@@ -43,45 +43,45 @@ class _Palette {
 }
 
 const _light = _Palette(
-  background: Color(0xFFF7F8FA),
+  background: Color(0xFFF9F9FB),
   surface: Color(0xFFFFFFFF),
-  primary: Color(0xFF0B4F5C),
-  primaryLight: Color(0xFF14707F),
-  primarySoft: Color(0xFFE3EEF0),
-  accent: Color(0xFF1F7A4D),
-  accentSoft: Color(0xFFD9F2E3),
-  textPrimary: Color(0xFF1A1A1A),
-  textSecondary: Color(0xFF8A8F98),
-  border: Color(0xFFE7E9EC),
-  divider: Color(0xFFE7E9EC),
-  shadowColor: Color(0x0D000000),
-  statusOrange: Color(0xFFF59E0B),
-  statusOrangeSoft: Color(0xFFFFFBEB),
-  statusRed: Color(0xFFE24C4C),
-  statusRedSoft: Color(0xFFFCEAEA),
+  primary: Color(0xFF0A7EA4),
+  primaryLight: Color(0xFF3AA0C2),
+  primarySoft: Color(0xFFE3F1F5),
+  accent: Color(0xFF34C759),
+  accentSoft: Color(0xFFE1F8E6),
+  textPrimary: Color(0xFF1C1C1E),
+  textSecondary: Color(0xFF8E8E93),
+  border: Color(0xFFE5E5EA),
+  divider: Color(0xFFE5E5EA),
+  shadowColor: Color(0x14000000),
+  statusOrange: Color(0xFFFF9500),
+  statusOrangeSoft: Color(0xFFFFF3E0),
+  statusRed: Color(0xFFFF3B30),
+  statusRedSoft: Color(0xFFFFE9E7),
   starYellow: Color(0xFFFFC107),
   inputFill: Color(0xFFF0F1F3),
 );
 
 const _dark = _Palette(
-  background: Color(0xFF0B0F14),
-  surface: Color(0xFF141A21),
-  primary: Color(0xFF3AA7BB),
-  primaryLight: Color(0xFF5FC2D4),
-  primarySoft: Color(0xFF16303A),
-  accent: Color(0xFF4FD98C),
-  accentSoft: Color(0xFF14301F),
-  textPrimary: Color(0xFFF5F7FA),
-  textSecondary: Color(0xFF8A97A8),
-  border: Color(0xFF232B35),
-  divider: Color(0xFF1C232B),
+  background: Color(0xFF000000),
+  surface: Color(0xFF1C1C1E),
+  primary: Color(0xFF3FC1E0),
+  primaryLight: Color(0xFF6AD1E8),
+  primarySoft: Color(0xFF12303A),
+  accent: Color(0xFF30D158),
+  accentSoft: Color(0xFF12301D),
+  textPrimary: Color(0xFFF5F5F7),
+  textSecondary: Color(0xFF8E8E93),
+  border: Color(0xFF2C2C2E),
+  divider: Color(0xFF2C2C2E),
   shadowColor: Color(0x66000000),
-  statusOrange: Color(0xFFF59E0B),
-  statusOrangeSoft: Color(0xFF2A2013),
-  statusRed: Color(0xFFEF4444),
-  statusRedSoft: Color(0xFF2A1414),
+  statusOrange: Color(0xFFFF9F0A),
+  statusOrangeSoft: Color(0xFF332208),
+  statusRed: Color(0xFFFF453A),
+  statusRedSoft: Color(0xFF331715),
   starYellow: Color(0xFFFFC107),
-  inputFill: Color(0xFF1A222C),
+  inputFill: Color(0xFF2C2C2E),
 );
 
 class AppColors {
@@ -142,15 +142,15 @@ class AppColors {
 class AppShadows {
   static BoxShadow get soft => BoxShadow(
         color: AppColors.shadowColor,
-        blurRadius: 20,
-        offset: const Offset(0, 8),
+        blurRadius: 24,
+        offset: const Offset(0, 10),
       );
 
   static BoxShadow get button => BoxShadow(
         color: AppColors.isDark
-            ? const Color(0x553AA7BB)
-            : const Color(0x1A0B4F5C),
-        blurRadius: 20,
+            ? const Color(0x553FC1E0)
+            : const Color(0x1A0A7EA4),
+        blurRadius: 22,
         offset: const Offset(0, 10),
       );
 }
