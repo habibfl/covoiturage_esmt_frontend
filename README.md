@@ -13,6 +13,7 @@ Le rôle Conducteur/Passager n'est pas un champ figé : il est déterminé autom
 - Flutter SDK (^3.11.5)
 - Chrome (pour lancer en mode web, utilisé pendant tout le développement)
 - Le backend Spring Boot doit tourner en local sur http://localhost:8080 (voir le dépôt backend pour les instructions)
+- Sur Windows, le Mode développeur doit être activé (Paramètres > Confidentialité et sécurité > Pour les développeurs > Mode développeur), nécessaire pour certains plugins Flutter utilisant des liens symboliques
 
 ## Installation
 
