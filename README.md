@@ -111,7 +111,6 @@ Pour valider rapidement que tout fonctionne, voici un parcours simple à suivre 
 - Notifications
 - Espace Administrateur avec liste des utilisateurs, blocage et déblocage de comptes
 - Mode sombre
-- Interface au style moderne avec typographie Inter, animations et effet de flou (frosted glass)
 
 ## Limitations connues
 
