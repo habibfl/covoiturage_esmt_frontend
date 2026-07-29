@@ -332,9 +332,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
     return _isDriver ? _buildDriverView(context) : _buildPassengerView(context);
   }
 
-  // ===========================================================
-  // VUE CONDUCTEUR
-  // ===========================================================
+  // vue conducteur
   Widget _buildDriverView(BuildContext context) {
     final trip = _trip!;
     final departure = trip['departure']?.toString() ?? 'Depart';
@@ -414,9 +412,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
     );
   }
 
-  // ===========================================================
-  // VUE PASSAGER
-  // ===========================================================
+  // vue passager
   Widget _buildPassengerView(BuildContext context) {
     final trip = _trip!;
     final departure = trip['departure']?.toString() ?? 'Depart';
@@ -511,9 +507,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
   }
 }
 
-// ===========================================================
-// WIDGETS COMPACTS
-// ===========================================================
+// widgets compacts, reutilises dans les deux vues
 
 class _FloatingTopRow extends StatelessWidget {
   final VoidCallback onBack;

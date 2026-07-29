@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Fait apparaitre [child] en fondu + leger glissement vers le haut,
-/// avec un delai progressif selon [index] pour un effet de liste en cascade.
+/// Fade + slide up, delai progressif selon [index] pour un effet cascade sur les listes.
 class FadeSlideIn extends StatefulWidget {
   final int index;
   final Widget child;

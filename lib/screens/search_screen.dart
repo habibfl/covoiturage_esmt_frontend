@@ -19,6 +19,27 @@ String _normalize(String input) {
   return result;
 }
 
+int? _departureHour(Map<String, dynamic> trip) {
+  final raw = trip['time']?.toString();
+  if (raw == null || raw.isEmpty) return null;
+  return int.tryParse(raw.split(':').first);
+}
+
+bool _matchesTimeFilter(int filterIndex, int? hour) {
+  if (filterIndex == 0) return true;
+  if (hour == null) return false;
+  switch (filterIndex) {
+    case 1:
+      return hour >= 5 && hour < 12;
+    case 2:
+      return hour >= 12 && hour < 18;
+    case 3:
+      return hour >= 18 || hour < 5;
+    default:
+      return true;
+  }
+}
+
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
 
@@ -57,7 +78,9 @@ class _SearchScreenState extends State<SearchScreen> {
     final result = await TripService.getTrajetsWithStatus();
     if (!mounted) return;
     setState(() {
-      _allTrips = result.trips;
+      _allTrips = result.trips
+          .where((t) => t['statut'] == 'PLANIFIE' || t['statut'] == 'EN_COURS')
+          .toList();
       _loading = false;
     });
     if (!result.success) {
@@ -73,9 +96,12 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   List<Map<String, dynamic>> get _filteredTrips {
-    if (_query.isEmpty) return _allTrips;
-    final needle = _normalize(_query);
+    final needle = _query.isEmpty ? null : _normalize(_query);
     return _allTrips.where((trip) {
+      if (!_matchesTimeFilter(_selectedFilter, _departureHour(trip))) {
+        return false;
+      }
+      if (needle == null) return true;
       final departure = _normalize(trip['departure']?.toString() ?? '');
       final arrival = _normalize(trip['arrival']?.toString() ?? '');
       return departure.contains(needle) || arrival.contains(needle);

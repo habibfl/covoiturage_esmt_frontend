@@ -330,7 +330,7 @@ class AuthService {
       final hasVehicle = await VehicleService.hasVehicle();
       await prefs.setString('role', hasVehicle ? 'driver' : 'passenger');
     } catch (_) {
-      // Echec silencieux : les infos locales existantes restent inchangees.
+      // si ca rate on garde juste les infos locales telles quelles
     }
   }
 

@@ -114,9 +114,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
           .child('${DateTime.now().millisecondsSinceEpoch}.jpg');
       await ref.putData(bytes);
       final url = await ref.getDownloadURL();
+      debugPrint('[ProfileScreen._pickPhoto] Photo uploadee: $url');
       await AuthService.saveProfilePhotoUrl(url);
       if (!mounted) return;
-      setState(() => _photoUrl = url);
+      setState(() {
+        _photoUrl = url;
+        // vide l'apercu local pour que l'avatar reparte sur la vraie url
+        _pickedPhotoBytes = null;
+      });
     } catch (e) {
       if (!mounted) return;
       showErrorSnackBar(
@@ -349,6 +354,26 @@ class _ProfileAvatar extends StatelessWidget {
     required this.uploading,
   });
 
+  Widget _initialsFallback() {
+    return Container(
+      width: 88,
+      height: 88,
+      decoration: BoxDecoration(
+        color: AppColors.primary,
+        shape: BoxShape.circle,
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        initial,
+        style: TextStyle(
+          fontSize: 30,
+          fontWeight: FontWeight.w700,
+          color: AppColors.onColor,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     Widget content;
@@ -359,6 +384,7 @@ class _ProfileAvatar extends StatelessWidget {
           width: 88,
           height: 88,
           fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => _initialsFallback(),
         ),
       );
     } else if (photoUrl.isNotEmpty) {
@@ -368,26 +394,11 @@ class _ProfileAvatar extends StatelessWidget {
           width: 88,
           height: 88,
           fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => _initialsFallback(),
         ),
       );
     } else {
-      content = Container(
-        width: 88,
-        height: 88,
-        decoration: BoxDecoration(
-          color: AppColors.primary,
-          shape: BoxShape.circle,
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          initial,
-          style: TextStyle(
-            fontSize: 30,
-            fontWeight: FontWeight.w700,
-            color: AppColors.onColor,
-          ),
-        ),
-      );
+      content = _initialsFallback();
     }
 
     return SizedBox(

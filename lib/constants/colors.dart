@@ -111,8 +111,7 @@ class AppColors {
   static Color get error => statusRed;
   static Color get star => starYellow;
 
-  /// Texte/icone sur un fond de couleur pleine (badge, avatar, bouton),
-  /// reste blanc quel que soit le theme.
+  /// Reste blanc dans les deux themes (texte/icone sur fond colore plein).
   static Color get onColor => const Color(0xFFFFFFFF);
 
   static void setDark(bool dark) {

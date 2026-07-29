@@ -19,7 +19,7 @@ class FirebaseService {
         'timestamp': ServerValue.timestamp,
       });
     } catch (e) {
-      // Echec silencieux : pas d'impact bloquant si Firebase est indisponible.
+      // pas grave si Firebase est down, le tracking n'est pas critique
       logSilentError('FirebaseService.updateLocation', e);
     }
   }

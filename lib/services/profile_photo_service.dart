@@ -1,4 +1,5 @@
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'auth_service.dart';
@@ -20,6 +21,7 @@ class ProfilePhotoService {
         SettableMetadata(contentType: 'image/jpeg'),
       );
       final url = await reference.getDownloadURL();
+      debugPrint('[ProfilePhotoService.upload] URL obtenue: $url');
       await AuthService.saveProfilePhotoUrl(url);
       return url;
     } catch (e) {

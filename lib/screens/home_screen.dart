@@ -43,12 +43,23 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<TripsResult> _fetchTrips() async {
     final result = await TripService.getTrajetsWithStatus();
-    if (!mounted || result.success) return result;
+    final filtered = _bookableTrips(result);
+    if (!mounted || result.success) return filtered;
     showErrorSnackBar(
       context,
       result.errorMessage ?? 'Impossible de charger les trajets.',
     );
-    return result;
+    return filtered;
+  }
+
+  TripsResult _bookableTrips(TripsResult result) {
+    return TripsResult(
+      trips: result.trips
+          .where((t) => t['statut'] == 'PLANIFIE' || t['statut'] == 'EN_COURS')
+          .toList(),
+      success: result.success,
+      errorMessage: result.errorMessage,
+    );
   }
 
   @override
